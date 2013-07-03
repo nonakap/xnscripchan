@@ -1,4 +1,4 @@
-/*	$Id: command.c,v 1.29 2002/12/05 17:53:43 nonaka Exp $	*/
+/*	$Id: command.c,v 1.30 2002/12/10 15:56:55 nonaka Exp $	*/
 
 /*
  * Copyright (c) 2001, 2002 NONAKA Kimihiro <aw9k-nnk@asahi-net.or.jp>
@@ -187,8 +187,8 @@ static int cmd_sub(reg_t *, long);
 static int cmd_systemcall(reg_t *, long);
 static int cmd_tal(reg_t *, long);
 static int cmd_textclear(reg_t *, long);
-//static int cmd_textoff(reg_t *, long);
-//static int cmd_texton(reg_t *, long);
+static int cmd_textoff(reg_t *, long);
+static int cmd_texton(reg_t *, long);
 static int cmd_textspeed(reg_t *, long);
 //static int cmd_to(reg_t *, long);
 static int cmd_transmode(reg_t *, long);
@@ -359,8 +359,8 @@ static struct command_table_tag {
 	{ "systemcall",		cmd_systemcall,		BLOCK_EX },
 	{ "tal",		cmd_tal,		BLOCK_EX },
 	{ "textclear",		cmd_textclear,		BLOCK_EX },
-	{ "textoff",		NULL,			BLOCK_EX },
-	{ "texton",		NULL,			BLOCK_EX },
+	{ "textoff",		cmd_textoff,		BLOCK_EX },
+	{ "texton",		cmd_texton,		BLOCK_EX },
 	{ "textspeed",		cmd_textspeed,		BLOCK_EX },
 	{ "to",			NULL,			BLOCK_DEF|BLOCK_EX },
 	{ "transmode",		cmd_transmode,		BLOCK_DEF },
@@ -2675,6 +2675,28 @@ cmd_textclear(reg_t *p, long narg)
 	_ASSERT(narg == 0);
 
 	newpage();
+
+	return STATE_COMMAND;
+}
+
+static int
+cmd_textoff(reg_t *p, long narg)
+{
+
+	DPRINTF(("textoff: narg = %ld\n", narg));
+	_ASSERT(p == NULL);
+	_ASSERT(narg == 0);
+
+	return STATE_COMMAND;
+}
+
+static int
+cmd_texton(reg_t *p, long narg)
+{
+
+	DPRINTF(("texton: narg = %ld\n", narg));
+	_ASSERT(p == NULL);
+	_ASSERT(narg == 0);
 
 	return STATE_COMMAND;
 }

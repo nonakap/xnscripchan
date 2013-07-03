@@ -9,14 +9,15 @@ NScripter for X -- XNscripchan
 
 1. 動作環境
 
-	UNIX + X11 上で動作する様な気がします。
-	NetBSD-current/i386 + XFree86 4.1.0 ベース上で開発しています。
+	UNIX + X11 上で動作するかもしれません。
+	ちなみに NetBSD/i386 + XFree86 4.2.1 で開発しています。
 
 	コンパイルには以下のソフトウェアが必要です。
 
 	・flex
 	・libjpeg
 	・libpng
+	・libungif
 	・libbz2(bzip2)
 
 
@@ -36,7 +37,7 @@ NScripter for X -- XNscripchan
 	○実装機能
 
 	・SAR, NSA 形式アーカイブの読み出し
-	・BMP, JPEG, PNG, SPB, 変形 LZSS, NBZ 形式ファイルの読み出し
+	・BMP, JPEG, PNG, GIF, SPB, 変形 LZSS, NBZ 形式ファイルの読み出し
 	・グローバル変数、ファイルアクセスログ、ラベルアクセスログの保存
 
 
@@ -74,4 +75,4 @@ NScripter for X -- XNscripchan
 
 
 -- 
-			$Id: README,v 1.4 2002/01/18 18:27:19 nonaka Exp $
+			$Id: README,v 1.6 2002/12/10 16:02:31 nonaka Exp $

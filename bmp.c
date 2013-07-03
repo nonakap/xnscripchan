@@ -1,7 +1,7 @@
-/*	$Id: bmp.c,v 1.9 2002/01/15 17:43:07 nonaka Exp $	*/
+/*	$Id: bmp.c,v 1.11 2002/12/10 16:03:31 nonaka Exp $	*/
 
 /*
- * Copyright (c) 2001 NONAKA Kimihiro <aw9k-nnk@asahi-net.or.jp>
+ * Copyright (c) 2001, 2002 NONAKA Kimihiro <aw9k-nnk@asahi-net.or.jp>
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -155,6 +155,7 @@ bmp_decode(image_t *img, unsigned char *data, size_t encode_size)
 	int bpp;
 	int w, h, rw;
 	int dx, dy;
+	int pal;
 	int done;
 	int i, j;
 	unsigned char c, n;
@@ -181,7 +182,7 @@ bmp_decode(image_t *img, unsigned char *data, size_t encode_size)
 	_ASSERT(get_mem_le16(&data[0x1a]) == 1);	/* =1 */
 
 	bpp = get_mem_le16(&data[0x1c]);
-	_ASSERT(bpp == 8 || bpp == 16 || bpp == 24);	
+	_ASSERT(bpp == 4 || bpp == 8 || bpp == 16 || bpp == 24);	
 	img->bpp = 8 * BPP;
 
 	compress = get_mem_le32(&data[0x1e]);
@@ -192,6 +193,15 @@ bmp_decode(image_t *img, unsigned char *data, size_t encode_size)
 		if (img->npalette == 0)
 			img->npalette = 1 << bpp;
 		_ASSERT(img->npalette <= (1 << bpp));
+
+		img->palette = Ecalloc(img->npalette * sizeof(palette_t), 1);
+		src = &data[0x36];
+		for (i = 0; i < img->npalette; i++, src += 4) {
+			img->palette[i].b = src[0];
+			img->palette[i].g = src[1];
+			img->palette[i].r = src[2];
+			/* src[3] unused */
+		}
 	}
 
 	/* decode data */
@@ -202,38 +212,34 @@ bmp_decode(image_t *img, unsigned char *data, size_t encode_size)
 	image_end = img->data + img->data_size;
 
 	switch (bpp) {
-	case 8:
-		img->palette = Ecalloc(img->npalette * sizeof(palette_t), 1);
-		src = &data[0x36];
-		for (i = 0; i < img->npalette; i++, src += 4) {
-			img->palette[i].b = src[0];
-			img->palette[i].g = src[1];
-			img->palette[i].r = src[2];
-			/* src[3] unused */
-		}
-
+	case 4:
 		if (compress == BI_RGB) {
-			rw = ROUNDUP(w, 4);
+			rw = ROUNDUP(w / 2, 4) * 2;
 			for (j = 0; j < h; j++) {
-				src = data + offset + (h - j - 1) * rw;
+				src = data + offset + ((h - j - 1) * rw) / 2;
 				dest = img->data + j * w * BPP;
-				for (i = 0; i < w; i++, src++, dest += BPP) {
+				for (i = 0; i < w; i++, dest += BPP) {
 					_ASSERT(src < data_end);
 					_ASSERT(dest < image_end);
-					_ASSERT(*src < img->npalette);
-					dest[0] = img->palette[*src].r;
-					dest[1] = img->palette[*src].g;
-					dest[2] = img->palette[*src].b;
+					if (i & 1) {
+						pal = (*src++ & 0x0f);
+					} else {
+						pal = (*src >> 4) & 0x0f;
+					}
+					_ASSERT(pal < img->npalette);
+					dest[0] = img->palette[pal].r;
+					dest[1] = img->palette[pal].g;
+					dest[2] = img->palette[pal].b;
 				}
 			}
-		} else if (compress == BI_RLE8) {
+		} else if (compress == BI_RLE4) {
 			dx = 0;
 			dy = h - 1;
 			done = 0;
-			src = data;
+			src = data + offset;
 			dest = img->data + dy * w * BPP;
 			while (src < data + encode_size
-			    && dest < img->data + img->data_size
+			    && dest <= img->data + img->data_size
 			    && dest >= img->data
 			    && !done) {
 				_ASSERT(src < data_end);
@@ -262,29 +268,125 @@ bmp_decode(image_t *img, unsigned char *data, size_t encode_size)
 						_ASSERT(src < data_end);
 						dy -= *src++;
 
-						if (++dx >= w) {
+						if (dx >= w) {
 							dx -= w;
 							if (--dy < 0)
 								break;
-							dest = img->data + (dy * w + dx) * BPP;
 						}
+						dest = img->data + (dy * w + dx) * BPP;
 						break;
 
 					default:
 						/* raw data */
-						for (i = 0; i < c; i++, src++, dest += BPP) {
+						for (i = 0; i < c; ++i, ++dx, dest += BPP) {
 							_ASSERT(src < data_end);
 							_ASSERT(dest < image_end);
-							dest[0] = img->palette[*src].r;
-							dest[1] = img->palette[*src].g;
-							dest[2] = img->palette[*src].b;
-
-							if (++dx >= w) {
-								dx -= w;
-								if (--dy < 0)
-									break;
-								dest = img->data + (dy * w + dx) * BPP;
+							if (i & 1) {
+								pal = (*src & 0x0f);
+								src++;
+							} else {
+								pal = (*src >> 4) & 0x0f;
 							}
+							dest[0] = img->palette[pal].r;
+							dest[1] = img->palette[pal].g;
+							dest[2] = img->palette[pal].b;
+						}
+
+						/* skip if not 16bit aligned */
+						if ((c & 3) && ((c & 3) == 1 || (c & 3) == 2))
+							src++;
+						break;
+					}
+				} else {
+					_ASSERT(c < img->npalette);
+					for (i = 0; i < n; ++i, ++dx, dest += BPP) {
+						_ASSERT(src < data_end);
+						_ASSERT(dest < image_end);
+						if (i & 1) {
+							pal = (*src & 0x0f);
+							src++;
+						} else {
+							pal = (*src>>4) & 0x0f;
+						}
+						dest[0] = img->palette[pal].r;
+						dest[1] = img->palette[pal].g;
+						dest[2] = img->palette[pal].b;
+					}
+				}
+			}
+		} else {
+			_ASSERT(compress == BI_RGB || compress == BI_RLE4);
+		}
+		break;
+
+	case 8:
+		if (compress == BI_RGB) {
+			rw = ROUNDUP(w, 4);
+			for (j = 0; j < h; j++) {
+				src = data + offset + (h - j - 1) * rw;
+				dest = img->data + j * w * BPP;
+				for (i = 0; i < w; i++, src++, dest += BPP) {
+					_ASSERT(src < data_end);
+					_ASSERT(dest < image_end);
+					_ASSERT(*src < img->npalette);
+					dest[0] = img->palette[*src].r;
+					dest[1] = img->palette[*src].g;
+					dest[2] = img->palette[*src].b;
+				}
+			}
+		} else if (compress == BI_RLE8) {
+			dx = 0;
+			dy = h - 1;
+			done = 0;
+			src = data + offset;
+			dest = img->data + dy * w * BPP;
+			while (src < data + encode_size
+			    && dest <= img->data + img->data_size
+			    && dest >= img->data
+			    && !done) {
+				_ASSERT(src < data_end);
+				n = *src++;
+				_ASSERT(src < data_end);
+				c = *src++;
+				if (n == 0) {
+					switch (c) {
+					case 0:
+						/* end of line */
+						dx = 0;
+						if (--dy < 0)
+							break;
+						dest = img->data + dy * w * BPP;
+						break;
+
+					case 1:
+						/* end of data */
+						done = 1;
+						break;
+
+					case 2:
+						/* move image offset */
+						_ASSERT(src < data_end);
+						dx += *src++;
+						_ASSERT(src < data_end);
+						dy -= *src++;
+
+						if (dx >= w) {
+							dx -= w;
+							if (--dy < 0)
+								break;
+						}
+						dest = img->data + (dy * w + dx) * BPP;
+						break;
+
+					default:
+						/* raw data */
+						for (i = 0; i < c; ++i, ++dx, dest += BPP) {
+							_ASSERT(src < data_end);
+							_ASSERT(dest < image_end);
+							pal = *src++;
+							dest[0] = img->palette[pal].r;
+							dest[1] = img->palette[pal].g;
+							dest[2] = img->palette[pal].b;
 						}
 
 						/* skip pad if odd */
@@ -294,22 +396,17 @@ bmp_decode(image_t *img, unsigned char *data, size_t encode_size)
 					}
 				} else {
 					_ASSERT(c < img->npalette);
-					for (i = 0; i < n; i++, dest += BPP) {
+					for (i = 0; i < n; ++i, ++dx, dest += BPP) {
 						_ASSERT(src < data_end);
 						_ASSERT(dest < image_end);
 						dest[0] = img->palette[c].r;
 						dest[1] = img->palette[c].g;
 						dest[2] = img->palette[c].b;
-
-						if (++dx >= w) {
-							dx -= w;
-							if (--dy < 0)
-								break;
-							dest = img->data + (dy * w + dx) * BPP;
-						}
 					}
 				}
 			}
+		} else {
+			_ASSERT(compress == BI_RGB || compress == BI_RLE8);
 		}
 		break;
 

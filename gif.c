@@ -1,6 +1,4 @@
-/*	$Id: gif.c,v 1.1 2002/12/05 18:00:44 nonaka Exp $	*/
-
-#if defined(USE_LIBUNGIF)
+/*	$Id: gif.c,v 1.2 2002/12/09 15:05:25 nonaka Exp $	*/
 
 /*
  * Copyright (c) 2002 NONAKA Kimihiro <aw9k-nnk@asahi-net.or.jp>
@@ -32,6 +30,8 @@
 
 #include "nscr.h"
 #include "image.h"
+
+#if defined(USE_LIBUNGIF)
 
 #include <gif_lib.h>
 

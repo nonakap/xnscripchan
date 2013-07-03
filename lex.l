@@ -1,5 +1,5 @@
 %{
-/*	$Id: lex.l,v 1.14 2002/01/23 16:38:58 nonaka Exp $	*/
+/*	$Id: lex.l,v 1.15 2002/12/09 16:51:42 nonaka Exp $	*/
 
 /*
  * Copyright (c) 2001 NONAKA Kimihiro <aw9k-nnk@asahi-net.or.jp>
@@ -106,7 +106,7 @@ lchk	return TOKEN_LCHK;
 	return TOKEN_JSTRING;
 }
 
-\*{_alpha}{_alnum}* {
+\*{_alpha}[^ \t\n]* {
 	yylval.str = Estrdup(yytext);
 	return TOKEN_LABEL;
 }

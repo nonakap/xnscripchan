@@ -1,8 +1,4 @@
-/*	$Id: x11.c,v 1.14 2002/12/05 17:53:43 nonaka Exp $	*/
-
-#ifndef	FONTSET
-#define	FONTSET	"-kochi-gothic-%s-r-normal--%ld-*-*-*-*-*-*-*"
-#endif
+/*	$Id: x11.c,v 1.15 2002/12/10 16:05:22 nonaka Exp $	*/
 
 /*
  * Copyright (c) 2001, 2002 NONAKA Kimihiro <aw9k-nnk@asahi-net.or.jp>
@@ -37,6 +33,10 @@
 
 #include "nscr.h"
 #include "xdimage.h"
+
+#ifndef	FONTSET
+#define	FONTSET	"-kochi-gothic-%s-r-normal--%ld-*-*-*-*-*-*-*"
+#endif
 
 Display *display;
 int screen;
