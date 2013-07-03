@@ -1,4 +1,4 @@
-/*	$Id: select.c,v 1.11 2002/01/18 18:23:39 nonaka Exp $	*/
+/*	$Id: select.c,v 1.12 2002/01/23 16:38:58 nonaka Exp $	*/
 
 /*
  * Copyright (c) 2001, 2002 NONAKA Kimihiro <aw9k-nnk@asahi-net.or.jp>
@@ -45,7 +45,6 @@ static selection_t *select_top = NULL;
 static int select_kind = -1;
 static long sel_var = -1;
 static int prev = -1;
-static int col;
 
 void
 select_init(int n)
@@ -58,7 +57,6 @@ select_init(int n)
 	select_kind = -1;
 	sel_var = -1;
 	prev = -1;
-	col = CTEXT->cur_ty;
 }
 
 void
@@ -73,13 +71,13 @@ select_destroy(void)
 	select_kind = -1;
 	sel_var = -1;
 	prev = -1;
-	col = 0;
 }
 
 void
 select_add(int no, char *msg, char *label)
 {
 	selection_t *t;
+	int ncolumn;
 
 	_ASSERT(no >= 0 && no < nselect);
 
@@ -89,8 +87,17 @@ select_add(int no, char *msg, char *label)
 	t->msglen = strlen(msg);
 	t->label = label ? Estrdup(label) : NULL;
 
-	text_setrect(&t->rect, &col, t->msg, t->msglen);
-	_ASSERT(col <= CTEXT->max_ty);
+	ncolumn = (((t->msglen + 1) / 2) / (CTEXT->max_tx + 2)) + 1;
+	t->rect.left = CTEXT->cur_left +
+	    (CFONT->width + CFONT->pitch_x) * CTEXT->cur_tx;
+	t->rect.top = CTEXT->cur_top +
+	    (CFONT->height + CFONT->pitch_y) * CTEXT->cur_ty;
+	t->rect.width = (CFONT->width + CFONT->pitch_x) *
+	    ((ncolumn == 1) ? (t->msglen / 2) : (CTEXT->max_tx + 1));
+	t->rect.height = (CFONT->height + CFONT->pitch_y) * ncolumn;
+
+	CTEXT->cur_ty += ncolumn;
+	_ASSERT(CTEXT->cur_ty <= CTEXT->max_ty);
 }
 
 void

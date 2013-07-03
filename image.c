@@ -1,4 +1,4 @@
-/*	$Id: image.c,v 1.20 2002/01/18 18:23:39 nonaka Exp $	*/
+/*	$Id: image.c,v 1.21 2002/01/23 16:38:58 nonaka Exp $	*/
 /* $libvimage-Id: vimage.c,v 1.14 1999/01/22 21:21:39 ryo Exp $ */
 
 #ifndef	IMAGE_CACHE
@@ -117,6 +117,7 @@ image_open(unsigned char *filename, int transmode)
 	bzero(&aq, sizeof(aq));
 	if (!archive_query(core->arc, info.filename, &aq)) {
 		opened = 1;
+		/* パス名変換しないと駄目 */
 		fp = fopen(info.filename, "rb");
 		if (fp == NULL) {
 			archive_print(core->arc);
@@ -198,10 +199,10 @@ image_open(unsigned char *filename, int transmode)
 			g = img->palette[info.transcolor].g;
 			b = img->palette[info.transcolor].b;
 		}
-		for (i = 0; i < img->width * img->height * BPP; i += BPP) {
-			if ((img->data[i + 0] == r)
-			 && (img->data[i + 1] == g)
-			 && (img->data[i + 2] == b)) {
+		for (i = j = 0; i < img->width * img->height; i++, j += BPP) {
+			if ((img->data[j + 0] == r)
+			 && (img->data[j + 1] == g)
+			 && (img->data[j + 2] == b)) {
 				img->mask[i] = 255;
 			} else {
 				img->mask[i] = 0;
@@ -729,6 +730,7 @@ imagecache_insert(image_t *img, unsigned char *filename)
 
 	/* delete cache if overflow */
 	if (++cache_num > IMAGE_CACHE) {
+		/* もう少し解放しないと駄目だよな… */
 		for (ic = cache_bottom; ic != NULL; ic = ic->prev)
 			if (!ic->inuse)
 				break;

@@ -1,4 +1,4 @@
-/*	$Id: display.c,v 1.17 2002/01/18 19:36:51 nonaka Exp $	*/
+/*	$Id: display.c,v 1.18 2002/01/23 16:38:58 nonaka Exp $	*/
 
 /*
  * Copyright (c) 2001, 2002 NONAKA Kimihiro <aw9k-nnk@asahi-net.or.jp>
@@ -111,26 +111,6 @@ text_set_locate(long x, long y)
 }
 
 void
-text_setrect(rect_t *rect, int *col, unsigned char *msg, size_t msglen)
-{
-	int ncolumn;
-
-	_ASSERT(rect != NULL);
-	_ASSERT(*col >= 0);
-	_ASSERT(msg != NULL);
-	_ASSERT(msglen > 0);
-
-	ncolumn = (((msglen + 1) / 2) / (CTEXT->max_tx + 1)) + 1;
-	rect->left = CTEXT->cur_left;
-	rect->top = CTEXT->cur_top + (CFONT->height + CFONT->pitch_y) * *col;
-	rect->width = (CFONT->width + CFONT->pitch_x) *
-	    ((ncolumn == 1) ? (msglen / 2) : (CTEXT->max_tx + 1));
-	rect->height = (CFONT->height + CFONT->pitch_y) * ncolumn;
-
-	*col += ncolumn;
-}
-
-void
 newpage(void)
 {
 
@@ -214,6 +194,7 @@ display_string(void)
 {
 	int next_state = STATE_COMMAND;
 	int is_clickwait = 1;
+	int is_cancel_nl = 0;
 	size_t i;
 	long v;
 	unsigned short ch;
@@ -226,6 +207,8 @@ display_string(void)
 	while (CMSG->remain > 0) {
 		ch = CMSG->data[CMSG->pos];
 		CMSGDEC();
+
+		DPRINTF(("%x ", ch));
 
 		if (ch & 0x8000) {
 			draw_putchar(&CTEXT->cur_tx, &CTEXT->cur_ty,
@@ -249,45 +232,16 @@ display_string(void)
 				break;
 
 			case '\\':
-				if (CMSG->remain > 0
-				    && CMSG->data[CMSG->pos] == '\n') {
-					/* skip '\n' */
-					CMSGDEC();
-				}
+				is_cancel_nl = 1;
 				next_state = STATE_CLICKPAGEWAIT;
 				break;
 
 			case '/':
-				if (CMSG->remain > 0
-				    && CMSG->data[CMSG->pos] == '\n') {
-					/* skip '\n' */
-					CMSGDEC();
-				} else {
-					draw_putchar(&CTEXT->cur_tx,
-					    &CTEXT->cur_ty,
-					    &CTEXT->curx, &CTEXT->cury,
-					    ch, CTEXT->color);
-				}
-				break;
+				is_cancel_nl = 1;
+				goto out;	/* XXX */
 
 			case '!':
-				if (CMSG->remain <= 0) {
-					draw_putchar(&CTEXT->cur_tx,
-					    &CTEXT->cur_ty,
-					    &CTEXT->curx, &CTEXT->cury,
-					    0xa1aa /*¡ª*/, CTEXT->color);
-					break;
-				}
-
-				if (CMSG->data[CMSG->pos] == '\n') {
-					CMSGDEC();
-					draw_putchar(&CTEXT->cur_tx,
-					    &CTEXT->cur_ty,
-					    &CTEXT->curx, &CTEXT->cury,
-					    0xa1aa /*¡ª*/, CTEXT->color);
-					break;
-				}
-
+				is_disp_nl = 0;
 				switch (CMSG->data[CMSG->pos]) {
 				case 'd':
 				case 'w':
@@ -306,7 +260,7 @@ display_string(void)
 						v = CMSG->data[CMSG->pos] - '0';
 						CMSGDEC();
 					}
-					DSNAP(("waittimer = %d\n", v));
+					DSNAP(("waittimer = %ld\n", v));
 
 				        waittimer = v;
 				        timer_set();
@@ -350,7 +304,7 @@ display_string(void)
 				}
 				tmp[6] = '\0';
 				v = strtol(tmp, NULL, 16);
-				DSNAP(("color = 0x%06x\n", v));
+				DSNAP(("color = 0x%06lx\n", v));
 				sys_alloc_color(v, &CTEXT->color);
 				}
 				break;
@@ -375,6 +329,12 @@ display_string(void)
 		} else if (!CMSG->is_clickwait) {
 			CMSG->is_clickwait = 1;
 		}
+	}
+
+out:
+	if (is_cancel_nl) {
+		is_disp_nl = 0;
+		is_cancel_nl = 0;
 	}
 
 	return next_state;

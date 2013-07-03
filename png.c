@@ -1,4 +1,4 @@
-/*	$Id: png.c,v 1.3 2002/01/13 21:43:46 nonaka Exp $	*/
+/*	$Id: png.c,v 1.4 2002/01/23 16:38:58 nonaka Exp $	*/
 
 /*
  * Copyright (c) 2001 NONAKA Kimihiro <aw9k-nnk@asahi-net.or.jp>
@@ -164,7 +164,7 @@ write_png(object_t *obj, const unsigned char *filename)
 	_ASSERT(filename != NULL);
 
 	img = (image_t *)obj;
-	_ASSERT(img->obj.type == OBJECT_IMAGE);
+//	_ASSERT(img->obj.type == OBJECT_IMAGE);
 
 	fp = fopen(filename, "wb");
 	if (fp == NULL)

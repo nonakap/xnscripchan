@@ -1,4 +1,4 @@
-/*	$Id: main.c,v 1.13 2002/01/18 18:23:39 nonaka Exp $	*/
+/*	$Id: main.c,v 1.14 2002/01/23 16:38:58 nonaka Exp $	*/
 
 /*
  * Copyright (c) 2001, 2002 NONAKA Kimihiro <aw9k-nnk@asahi-net.or.jp>
@@ -83,9 +83,7 @@ main(int argc, char *argv[])
 script_read:
 	yyin = fp;
 	prescan(yyin);
-
-	CSCREEN->width = 640;	/* XXX */
-	CSCREEN->height = 480;	/* XXX */
+	screenmode_set(yyin);
 
 	arc = archive_new(0, NULL);
 	core->arc = arc;
@@ -147,8 +145,8 @@ reset(void)
 	v[11] = 0x999999;
 	v[12] = 0;
 	v[13] = 0;
-	v[14] = 639;
-	v[15] = 479;
+	v[14] = SCREEN_WIDTH - 1;
+	v[15] = SCREEN_HEIGHT - 1;
 	text_setwindow(v, 16, NULL);
 
 	sys_alloc_color(0xffffff, &CTEXT->color);

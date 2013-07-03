@@ -1,4 +1,4 @@
-/*	$Id: command.c,v 1.27 2002/01/18 19:36:51 nonaka Exp $	*/
+/*	$Id: command.c,v 1.28 2002/01/24 16:24:50 nonaka Exp $	*/
 
 /*
  * Copyright (c) 2001, 2002 NONAKA Kimihiro <aw9k-nnk@asahi-net.or.jp>
@@ -36,22 +36,25 @@
 #include "label.h"
 #include "symbol.h"
 
-//static int cmd_abssetcursor(reg_t *, long);
+static int cmd_abssetcursor(reg_t *, long);
 static int cmd_add(reg_t *, long);
 static int cmd_amsp(reg_t *, long);
 static int cmd_arc(reg_t *, long);
 static int cmd_autoclick(reg_t *, long);
+static int cmd_automode_time(reg_t *, long);
 //static int cmd_avi(reg_t *, long);
 static int cmd_bg(reg_t *, long);
 //static int cmd_bgalia(reg_t *, long);
 static int cmd_blt(reg_t *, long);
 static int cmd_br(reg_t *, long);
+//static int cmd_break(reg_t *, long);
 static int cmd_btn(reg_t *, long);
 static int cmd_btndef(reg_t *, long);
 static int cmd_btnwait(reg_t *, long);
 static int cmd_btnwait2(reg_t *, long);
 static int cmd_caption(reg_t *, long);
 static int cmd_cdfadeout(reg_t *, long);
+static int cmd_chkdbg(reg_t *, long);
 static int cmd_cl(reg_t *, long);
 static int cmd_click(reg_t *, long);
 static int cmd_clickpos(reg_t *, long);
@@ -74,9 +77,11 @@ static int cmd_dwave(reg_t *, long);
 static int cmd_dwavestop(reg_t *, long);
 static int cmd_effect(reg_t *, long);
 static int cmd_effectblank(reg_t *, long);
+static int cmd_effectcut(reg_t *, long);
 static int cmd_end(reg_t *, long);
 static int cmd_erasetextwindow(reg_t *, long);
 static int cmd_filelog(reg_t *, long);
+//static int cmd_for(reg_t *, long);
 static int cmd_game(reg_t *, long);
 //static int cmd_getini(reg_t *, long);
 static int cmd_getreg(reg_t *, long);
@@ -89,14 +94,18 @@ static int cmd_humanz(reg_t *, long);
 static int cmd_if(reg_t *, long);
 static int cmd_inc(reg_t *, long);
 static int cmd_inputstr(reg_t *, long);
+static int cmd_insertmenu(reg_t *, long);
 static int cmd_intlimit(reg_t *, long);
 static int cmd_itoa(reg_t *, long);
 static int cmd_jumpb(reg_t *, long);
 static int cmd_jumpf(reg_t *, long);
+static int cmd_jpegmode(reg_t *, long);
+static int cmd_kidokuskip(reg_t *, long);
 static int cmd_killmenu(reg_t *, long);
 static int cmd_labellog(reg_t *, long);
 static int cmd_ld(reg_t *, long);
 static int cmd_len(reg_t *, long);
+static int cmd_linepage(reg_t *, long);
 static int cmd_loadgame(reg_t *, long);
 static int cmd_locate(reg_t *, long);
 static int cmd_lookbackbutton(reg_t *, long);
@@ -132,6 +141,8 @@ static int cmd_mp3save(reg_t *, long);
 static int cmd_msp(reg_t *, long);
 static int cmd_mul(reg_t *, long);
 static int cmd_nega(reg_t *, long);
+static int cmd_nodv(reg_t *, long);
+static int cmd_noloaderror(reg_t *, long);
 static int cmd_notif(reg_t *, long);
 static int cmd_nsa(reg_t *, long);
 static int cmd_numalias(reg_t *, long);
@@ -144,6 +155,7 @@ static int cmd_puttext(reg_t *, long);
 static int cmd_quakex(reg_t *, long);
 static int cmd_quakey(reg_t *, long);
 static int cmd_reset(reg_t *, long);
+static int cmd_resetmenu(reg_t *, long);
 static int cmd_resettimer(reg_t *, long);
 static int cmd_return(reg_t *, long);
 //static int cmd_rlookback(reg_t *, long);
@@ -167,15 +179,17 @@ static int cmd_setwindow(reg_t *, long);
 static int cmd_skip(reg_t *, long);
 static int cmd_soundpressplgin(reg_t *, long);
 static int cmd_spi(reg_t *, long);
+//static int cmd_step(reg_t *, long);
 static int cmd_stop(reg_t *, long);
 static int cmd_stralias(reg_t *, long);
 static int cmd_sub(reg_t *, long);
 static int cmd_systemcall(reg_t *, long);
-//static int cmd_tal(reg_t *, long);
+static int cmd_tal(reg_t *, long);
 static int cmd_textclear(reg_t *, long);
 //static int cmd_textoff(reg_t *, long);
 //static int cmd_texton(reg_t *, long);
 static int cmd_textspeed(reg_t *, long);
+//static int cmd_to(reg_t *, long);
 static int cmd_transmode(reg_t *, long);
 static int cmd_trap(reg_t *, long);
 static int cmd_underline(reg_t *, long);
@@ -193,22 +207,25 @@ static struct command_table_tag {
 	int		(*funcp)(reg_t *, long);
 	int		block;
 } cmd_tbl[] = {
-	{ "abssetcursor",	NULL,			BLOCK_EX },
+	{ "abssetcursor",	cmd_abssetcursor,	BLOCK_EX },
 	{ "add",		cmd_add,		BLOCK_DEF|BLOCK_EX },
 	{ "amsp",		cmd_amsp,		BLOCK_EX },
 	{ "arc",		cmd_arc,		BLOCK_DEF },
 	{ "autoclick",		cmd_autoclick,		BLOCK_EX },
+	{ "automode_time",	cmd_automode_time,	BLOCK_DEF },
 	{ "avi",		NULL,			BLOCK_EX },
 	{ "bg",			cmd_bg,			BLOCK_EX },
 	{ "bgalia",		NULL,			BLOCK_DEF },
 	{ "blt",		cmd_blt,		BLOCK_EX },
 	{ "br",			cmd_br,			BLOCK_EX },
+	{ "break",		NULL,			BLOCK_DEF|BLOCK_EX },
 	{ "btn",		cmd_btn,		BLOCK_EX },
 	{ "btndef",		cmd_btndef,		BLOCK_EX },
 	{ "btnwait",		cmd_btnwait,		BLOCK_EX },
 	{ "btnwait2",		cmd_btnwait2,		BLOCK_EX },
 	{ "caption",		cmd_caption,		BLOCK_DEF|BLOCK_EX },
 	{ "cdfadeout",		cmd_cdfadeout,		BLOCK_DEF },
+	{ "chkdbg",		cmd_chkdbg,		BLOCK_DEF },
 	{ "cl",			cmd_cl,			BLOCK_EX },
 	{ "click",		cmd_click,		BLOCK_EX },
 	{ "clickpos",		cmd_clickpos,		BLOCK_EX },
@@ -231,9 +248,11 @@ static struct command_table_tag {
 	{ "dwavestop",		cmd_dwavestop,		BLOCK_EX },
 	{ "effect",		cmd_effect,		BLOCK_DEF },
 	{ "effectblank",	cmd_effectblank,	BLOCK_DEF },
+	{ "effectcut",		cmd_effectcut,		BLOCK_DEF },
 	{ "end",		cmd_end,		BLOCK_DEF|BLOCK_EX },
 	{ "erasetextwindow",	cmd_erasetextwindow,	BLOCK_EX },
 	{ "filelog",		cmd_filelog,		BLOCK_DEF },
+	{ "for",		NULL,			BLOCK_DEF|BLOCK_EX },
 	{ "game",		cmd_game,		BLOCK_DEF },
 	{ "getini",		NULL,			BLOCK_DEF|BLOCK_EX },
 	{ "getreg",		cmd_getreg,		BLOCK_DEF|BLOCK_EX },
@@ -246,14 +265,18 @@ static struct command_table_tag {
 	{ "if",			cmd_if,			BLOCK_DEF|BLOCK_EX },
 	{ "inc",		cmd_inc,		BLOCK_DEF|BLOCK_EX },
 	{ "inputstr",		cmd_inputstr,		BLOCK_EX },
+	{ "insertmenu",		cmd_insertmenu,		BLOCK_DEF },
 	{ "intlimit",		cmd_intlimit,		BLOCK_DEF },
 	{ "itoa",		cmd_itoa,		BLOCK_DEF|BLOCK_EX },
+	{ "jpegmode",		cmd_jpegmode,		BLOCK_DEF },
 	{ "jumpb",		cmd_jumpb,		BLOCK_DEF|BLOCK_EX },
 	{ "jumpf",		cmd_jumpf,		BLOCK_DEF|BLOCK_EX },
+	{ "kidokuskip",		cmd_kidokuskip,		BLOCK_DEF },
 	{ "killmenu",		cmd_killmenu,		BLOCK_DEF },
 	{ "labellog",		cmd_labellog,		BLOCK_DEF },
 	{ "ld",			cmd_ld,			BLOCK_EX },
 	{ "len",		cmd_len,		BLOCK_DEF|BLOCK_EX },
+	{ "linepage",		cmd_linepage,		BLOCK_DEF },
 	{ "loadgame",		cmd_loadgame,		BLOCK_EX },
 	{ "locate",		cmd_locate,		BLOCK_EX },
 	{ "lookbackbutton",	cmd_lookbackbutton,	BLOCK_DEF },
@@ -289,6 +312,8 @@ static struct command_table_tag {
 	{ "msp",		cmd_msp,		BLOCK_EX },
 	{ "mul",		cmd_mul,		BLOCK_DEF|BLOCK_EX },
 	{ "nega",		cmd_nega,		BLOCK_EX },
+	{ "nodv",		cmd_nodv,		BLOCK_DEF },
+	{ "noloaderror",	cmd_noloaderror,	BLOCK_DEF },
 	{ "notif",		cmd_notif,		BLOCK_DEF|BLOCK_EX },
 	{ "nsa",		cmd_nsa,		BLOCK_DEF },
 	{ "numalias",		cmd_numalias,		BLOCK_DEF },
@@ -301,6 +326,7 @@ static struct command_table_tag {
 	{ "quakex",		cmd_quakex,		BLOCK_EX },
 	{ "quakey",		cmd_quakey,		BLOCK_EX },
 	{ "reset",		cmd_reset,		BLOCK_EX },
+	{ "resetmenu",		cmd_resetmenu,		BLOCK_DEF },
 	{ "resettimer",		cmd_resettimer,		BLOCK_EX },
 	{ "return",		cmd_return,		BLOCK_DEF|BLOCK_EX },
 	{ "rlookback",		NULL,			BLOCK_DEF },
@@ -324,15 +350,17 @@ static struct command_table_tag {
 	{ "skip",		cmd_skip,		BLOCK_DEF|BLOCK_EX },
 	{ "soundpressplgin",	cmd_soundpressplgin,	BLOCK_DEF },
 	{ "spi",		cmd_spi,		BLOCK_DEF },
+	{ "step",		NULL,			BLOCK_DEF|BLOCK_EX },
 	{ "stop",		cmd_stop,		BLOCK_EX },
 	{ "stralias",		cmd_stralias,		BLOCK_DEF },
 	{ "sub",		cmd_sub,		BLOCK_DEF|BLOCK_EX },
 	{ "systemcall",		cmd_systemcall,		BLOCK_EX },
-	{ "tal",		NULL,			BLOCK_EX },
+	{ "tal",		cmd_tal,		BLOCK_EX },
 	{ "textclear",		cmd_textclear,		BLOCK_EX },
 	{ "textoff",		NULL,			BLOCK_EX },
 	{ "texton",		NULL,			BLOCK_EX },
 	{ "textspeed",		cmd_textspeed,		BLOCK_EX },
+	{ "to",			NULL,			BLOCK_DEF|BLOCK_EX },
 	{ "transmode",		cmd_transmode,		BLOCK_DEF },
 	{ "trap",		cmd_trap,		BLOCK_EX },
 	{ "underline",		cmd_underline,		BLOCK_DEF },
@@ -430,6 +458,20 @@ cmd_get_label(reg_t *p)
  * command
  */
 static int
+cmd_abssetcursor(reg_t *p, long narg)
+{
+
+	UNUSED(p);
+	UNUSED(narg);
+
+	DPRINTF(("abssetcursor: narg = %ld\n", narg));
+
+	/* XXX */
+
+	return STATE_COMMAND;
+}
+
+static int
 cmd_add(reg_t *p, long narg)
 {
 
@@ -505,6 +547,22 @@ cmd_autoclick(reg_t *p, long narg)
 
 	DPRINTF(("autoclick: narg = %ld\n", narg));
 	_ASSERT(narg == 1);
+
+	/* XXX */
+
+	return STATE_COMMAND;
+}
+
+static int
+cmd_automode_time(reg_t *p, long narg)
+{
+
+	UNUSED(p);
+
+	DPRINTF(("automode_time: narg = %ld\n", narg));
+	_ASSERT(narg == 1);
+
+	/* XXX */
 
 	return STATE_COMMAND;
 }
@@ -663,6 +721,19 @@ cmd_cdfadeout(reg_t *p, long narg)
 
 	DPRINTF(("cdfadeout: narg = %ld\n", narg));
 	_ASSERT(narg == 1);
+
+	return STATE_COMMAND;
+}
+
+static int
+cmd_chkdbg(reg_t *p, long narg)
+{
+
+	DPRINTF(("chkdbg: narg = %ld\n", narg));
+	_ASSERT(narg == 1);
+	_ASSERT(p[0].type == TOKEN_VARNUM);
+
+	varnum_set(p[0].u.val, 0);	/* XXX */
 
 	return STATE_COMMAND;
 }
@@ -972,6 +1043,19 @@ cmd_effectblank(reg_t *p, long narg)
 }
 
 static int
+cmd_effectcut(reg_t *p, long narg)
+{
+
+	DPRINTF(("effectcut: narg = %ld\n", narg));
+	_ASSERT(p == NULL);
+	_ASSERT(narg == 0);
+
+	/* XXX */
+
+	return STATE_COMMAND;
+}
+
+static int
 cmd_end(reg_t *p, long narg)
 {
 
@@ -1266,6 +1350,20 @@ cmd_inputstr(reg_t *p, long narg)
 }
 
 static int
+cmd_insertmenu(reg_t *p, long narg)
+{
+
+	UNUSED(p);
+
+	DPRINTF(("insertmenu: narg = %ld\n", narg));
+	_ASSERT(narg == 2 || narg == 3);
+
+	/* XXX */
+
+	return STATE_COMMAND;
+}
+
+static int
 cmd_intlimit(reg_t *p, long narg)
 {
 
@@ -1294,6 +1392,19 @@ cmd_itoa(reg_t *p, long narg)
 }
 
 static int
+cmd_jpegmode(reg_t *p, long narg)
+{
+
+	DPRINTF(("jpegmode: narg = %ld\n", narg));
+	_ASSERT(p == NULL);
+	_ASSERT(narg == 0);
+
+	/* XXX */
+
+	return STATE_COMMAND;
+}
+
+static int
 cmd_jumpb(reg_t *p, long narg)
 {
 
@@ -1315,6 +1426,19 @@ cmd_jumpf(reg_t *p, long narg)
 	_ASSERT(narg == 0);
 
 	tilde_jump(LABEL_TILDE_JUMPF);
+
+	return STATE_COMMAND;
+}
+
+static int
+cmd_kidokuskip(reg_t *p, long narg)
+{
+
+	DPRINTF(("kidokuskip: narg = %ld\n", narg));
+	_ASSERT(p == NULL);
+	_ASSERT(narg == 1);
+
+	/* XXX */
 
 	return STATE_COMMAND;
 }
@@ -1395,6 +1519,19 @@ cmd_lookbackflush(reg_t *p, long narg)
 {
 
 	DPRINTF(("cmd_lookbackflush: narg = %ld\n", narg));
+	_ASSERT(p == NULL);
+	_ASSERT(narg == 0);
+
+	/* XXX */
+
+	return STATE_COMMAND;
+}
+
+static int
+cmd_linepage(reg_t *p, long narg)
+{
+
+	DPRINTF(("cmd_linepage: narg = %ld\n", narg));
 	_ASSERT(p == NULL);
 	_ASSERT(narg == 0);
 
@@ -1807,6 +1944,32 @@ cmd_nega(reg_t *p, long narg)
 }
 
 static int
+cmd_nodv(reg_t *p, long narg)
+{
+
+	DPRINTF(("nodv: narg = %ld\n", narg));
+	_ASSERT(p == NULL);
+	_ASSERT(narg == 0);
+
+	/* XXX */
+
+	return STATE_COMMAND;
+}
+
+static int
+cmd_noloaderror(reg_t *p, long narg)
+{
+
+	DPRINTF(("noloaderror: narg = %ld\n", narg));
+	_ASSERT(p == NULL);
+	_ASSERT(narg == 0);
+
+	/* XXX */
+
+	return STATE_COMMAND;
+}
+
+static int
 cmd_notif(reg_t *p, long narg)
 {
 	reg_t q[2], op;
@@ -2088,6 +2251,19 @@ cmd_reset(reg_t *p, long narg)
 	reset();
 	/* Already exec mode */
 	label_jump("start");
+
+	return STATE_COMMAND;
+}
+
+static int
+cmd_resetmenu(reg_t *p, long narg)
+{
+
+	DPRINTF(("resetmenu: narg = %ld\n", narg));
+	_ASSERT(p == NULL);
+	_ASSERT(narg == 0);
+
+	/* XXX */
 
 	return STATE_COMMAND;
 }
@@ -2455,6 +2631,20 @@ cmd_systemcall(reg_t *p, long narg)
 	_ASSERT(narg == 1);
 
 	/* XXX */
+
+	return STATE_COMMAND;
+}
+
+static int
+cmd_tal(reg_t *p, long narg)
+{
+	unsigned char *s;
+
+	DPRINTF(("tal: narg = %ld\n", narg));
+	_ASSERT(narg == 3);
+
+	s = cmd_get_string(&p[0]);
+	chr_set_clarity(s[0], cmd_get_number(&p[1]));
 
 	return STATE_COMMAND;
 }

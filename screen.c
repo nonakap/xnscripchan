@@ -1,4 +1,4 @@
-/*	$Id: screen.c,v 1.18 2002/01/18 19:36:51 nonaka Exp $	*/
+/*	$Id: screen.c,v 1.19 2002/01/24 16:24:51 nonaka Exp $	*/
 
 /*
  * Copyright (c) 2001, 2002 NONAKA Kimihiro <aw9k-nnk@asahi-net.or.jp>
@@ -31,7 +31,6 @@
 #include "nscr.h"
 #include "image.h"
 
-static int is_show_text = 1;
 static int is_show_text_effect = 1;
 
 void
@@ -161,13 +160,6 @@ screen_update(void)
 }
 
 void
-screen_text_onoff(int flag)
-{
-
-	is_show_text = flag;
-}
-
-void
 screen_text_window_effect_onoff(int flag)
 {
 
@@ -195,6 +187,6 @@ redraw(rect_t *rect)
 	    rect->left, rect->top, rect->width, rect->height,
 	    rect->left, rect->top);
 
-	if (is_show_text)
+	if (CMSG->is_show_window)
 		text_redraw();
 }

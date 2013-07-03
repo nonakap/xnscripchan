@@ -1,4 +1,4 @@
-/*	$Id: nscr.h,v 1.24 2002/01/18 19:36:51 nonaka Exp $	*/
+/*	$Id: nscr.h,v 1.26 2002/01/24 16:24:51 nonaka Exp $	*/
 
 /*
  * Copyright (c) 2001, 2002 NONAKA Kimihiro <aw9k-nnk@asahi-net.or.jp>
@@ -91,6 +91,14 @@ typedef struct _nscr_core_tag {
 	int			block;
 
 	struct {
+		int		mode;
+enum {
+	SCREEN_MODE_DEFAULT,
+	SCREEN_MODE_800x600,
+	SCREEN_MODE_320x240,
+	SCREEN_MODE_MAX
+};
+
 		int		width;
 		int		height;
 
@@ -239,7 +247,6 @@ void command_init(void);
 void text_setwindow(long *, long, unsigned char *);
 void text_set_clickstr(unsigned char *, size_t, long);
 void text_set_locate(long, long);
-void text_setrect(rect_t *, int *, unsigned char *, size_t);
 void display_selection(long, long, unsigned char *, int);
 void display_message(unsigned char *, size_t);
 int display_string(void);
@@ -255,6 +262,7 @@ image_t *get_jpeg(FILE *, long, size_t);
 /* lex.l */
 extern int lineno;
 extern int is_encoded;
+extern int is_disp_nl;
 extern FILE *yyin;
 
 int yylex(void);
@@ -293,6 +301,7 @@ extern long *linepos;
 extern long scan_lineno;
 
 void prescan(FILE *);
+int screenmode_set(FILE *);
 
 /* sar.c */
 int sar_open(object_t *, int);
@@ -305,7 +314,6 @@ void screen_setwindow(unsigned char *, int, rect_t *);
 void screen_grayscale(int);
 void screen_nega(long);
 void screen_update(void);
-void screen_text_onoff(int);
 void screen_text_window_effect_onoff(int);
 void screen_show_text_window(void);
 
@@ -334,6 +342,7 @@ image_t *get_spb(FILE *, long, size_t, size_t);
 void load_chr(unsigned char, unsigned char *);
 void merge_chr(unsigned char, image_t *);
 void hide_chr(unsigned char);
+void chr_set_clarity(unsigned char, long);
 void chr_set_priority(long);
 void chr_set_underline(long);
 void load_sprite(int, unsigned char *, point_t *, int);
@@ -372,6 +381,7 @@ int save_globalvar(void);
 int load_globalvar(void);
 
 /* x11.c */
+#define	SCREEN_MODE	CSCREEN->mode
 #define	SCREEN_WIDTH	CSCREEN->width
 #define	SCREEN_HEIGHT	CSCREEN->height
 #define	BPP		3

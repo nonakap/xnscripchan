@@ -1,4 +1,4 @@
-/*	$Id: sprite.c,v 1.10 2002/01/18 18:52:37 nonaka Exp $	*/
+/*	$Id: sprite.c,v 1.11 2002/01/24 16:24:51 nonaka Exp $	*/
 
 /*
  * Copyright (c) 2001, 2002 NONAKA Kimihiro <aw9k-nnk@asahi-net.or.jp>
@@ -52,18 +52,15 @@ load_chr(unsigned char kind, unsigned char *filename)
 	_ASSERT(filename != NULL);
 
 	switch (kind) {
-	case 'c':
-	case 'C':
+	case 'c': case 'C':
 		n = 0;
 		break;
 
-	case 'l':
-	case 'L':
+	case 'l': case 'L':
 		n = 1;
 		break;
 
-	case 'r':
-	case 'R':
+	case 'r': case 'R':
 		n = 2;
 		break;
 
@@ -88,23 +85,19 @@ hide_chr(unsigned char kind)
 	int i;
 
 	switch (kind) {
-	case 'c':
-	case 'C':
+	case 'c': case 'C':
 		chr[0].flag = 0;
 		break;
 
-	case 'l':
-	case 'L':
+	case 'l': case 'L':
 		chr[1].flag = 0;
 		break;
 
-	case 'r':
-	case 'R':
+	case 'r': case 'R':
 		chr[2].flag = 0;
 		break;
 
-	case 'a':
-	case 'A':
+	case 'a': case 'A':
 		for (i = 0; i < MAX_CHR; i++)
 			chr[i].flag = 0;
 		break;
@@ -127,7 +120,7 @@ merge_chr(unsigned char kind, image_t *dest)
 	_ASSERT(dest != NULL);
 
 	switch (kind) {
-	case 'c':
+	case 'c': case 'C':
 		if (chr[0].image == NULL)
 			return;
 
@@ -135,7 +128,7 @@ merge_chr(unsigned char kind, image_t *dest)
 		xoff = (SCREEN_WIDTH - chr[0].image->width) / 2;
 		break;
 
-	case 'l':
+	case 'l': case 'L':
 		if (chr[1].image == NULL)
 			return;
 
@@ -143,7 +136,7 @@ merge_chr(unsigned char kind, image_t *dest)
 		xoff = (SCREEN_WIDTH / 4) - chr[1].image->width / 2;
 		break;
 
-	case 'r':
+	case 'r': case 'R':
 		if (chr[2].image == NULL)
 			return;
 
@@ -169,6 +162,43 @@ merge_chr(unsigned char kind, image_t *dest)
 }
 
 void
+chr_set_clarity(unsigned char kind, long v)
+{
+	int n;
+
+	_ASSERT(v >= 0 && v <= 255);
+
+	switch (kind) {
+	case 'c': case 'C':
+		n = 0;
+		break;
+
+	case 'l': case 'L':
+		n = 1;
+		break;
+
+	case 'r': case 'R':
+		n = 2;
+		break;
+
+	default:
+		_ASSERT(0);
+		return;
+	}
+
+	if (chr[n].image == NULL)
+		return;
+
+	if (v == 255) {
+		chr[n].image->has_clarity = 0;
+		chr[n].image->clarity = 255;
+	} else {
+		chr[n].image->has_clarity = 1;
+		chr[n].image->clarity = v;
+	}
+}
+
+void
 chr_set_priority(long v)
 {
 
@@ -180,8 +210,6 @@ chr_set_priority(long v)
 void
 chr_set_underline(long v)
 {
-
-	_ASSERT(v >= 0 && v <= SCREEN_HEIGHT);
 
 	chr_underline = v;
 }

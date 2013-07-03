@@ -1,5 +1,5 @@
 %{
-/*	$Id: lex.l,v 1.13 2002/01/18 18:52:37 nonaka Exp $	*/
+/*	$Id: lex.l,v 1.14 2002/01/23 16:38:58 nonaka Exp $	*/
 
 /*
  * Copyright (c) 2001 NONAKA Kimihiro <aw9k-nnk@asahi-net.or.jp>
@@ -83,9 +83,7 @@ _alnum	[_0-9A-Za-z]
 [ \t]	;
 ;.*	/* comment */;
 ^~	/* label */;
-\r	/* ignore */;
 ^\n$	lineno++;
-\/\n	lineno++;
 
 ==	return TOKEN_EQ;
 !=|<>	return TOKEN_NE;
@@ -197,7 +195,6 @@ lchk	return TOKEN_LCHK;
 	lineno++;
 	return TOKEN_NL;
 }
-
 
 .	return yylex_subr();
 %%
@@ -322,8 +319,6 @@ yylex_subr(void)
 				p = Erealloc(p, TEXTBUFSIZE * n);
 			}
 		} while ((c = input()) != NULL);
-		if (c == '\n')
-			p[off++] = '\n';
 		unput(c);
 		p[off] = '\0';
 

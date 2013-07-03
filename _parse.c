@@ -1,4 +1,4 @@
-/*	$Id: _parse.c,v 1.17 2002/01/18 18:23:39 nonaka Exp $	*/
+/*	$Id: _parse.c,v 1.18 2002/01/23 16:38:58 nonaka Exp $	*/
 
 /*
  * Copyright (c) 2001, 2002 NONAKA Kimihiro <aw9k-nnk@asahi-net.or.jp>
@@ -70,6 +70,7 @@ int token;
 int state = STATE_COMMAND;
 int next_state = STATE_COMMAND;
 long skipline = 0;
+int is_disp_nl = 0;
 
 static reg_t narg = { TOKEN_NARG, 0, NULL, {0} };
 static reg_t command = { TOKEN_UNKNOWN, 0, NULL, {0} };
@@ -182,7 +183,13 @@ state_command(reg_t *reg)
 
 	switch (reg->type) {
 	case ':':
+		return STATE_COMMAND;
+
 	case TOKEN_NL:
+		if (is_disp_nl) {
+			display_message("\n", 1);
+			is_disp_nl = 0;
+		}
 		return STATE_COMMAND;
 
 	case TOKEN_STRING:
@@ -194,6 +201,7 @@ state_command(reg_t *reg)
 		return STATE_ARG;
 
 	case TOKEN_JSTRING:
+		is_disp_nl = 1;
 		display_message(reg->u.str, strlen(reg->u.str));
 		Efree(reg->u.str);
 		return STATE_COMMAND;
@@ -204,6 +212,7 @@ state_command(reg_t *reg)
 		DPRINTF(("show varnum[%ld] = 0x%lx\n",
 		    reg->u.val, varnum_get(reg->u.val)));
 		snprintf(buf, sizeof(buf), "%ld", varnum_get(reg->u.val));
+		is_disp_nl = 1;
 		display_message(buf, strlen(buf));
 		}
 		return STATE_COMMAND;
@@ -212,6 +221,7 @@ state_command(reg_t *reg)
 		unsigned char *ptr = varstr_get(reg->u.val);
 
 		DPRINTF(("show varstr[%ld] = %s\n", reg->u.val, ptr));
+		is_disp_nl = 1;
 		display_message(ptr, strlen(ptr));
 		}
 		return STATE_COMMAND;
@@ -226,14 +236,17 @@ state_command(reg_t *reg)
 		return STATE_COMMAND;
 
 	case '_':
+		is_disp_nl = 1;
 		display_message("_", 1);
 		return STATE_COMMAND;
 
 	case '@':
+		is_disp_nl = 1;
 		display_message("@", 1);
 		return STATE_COMMAND;
 
 	case '\\':
+		is_disp_nl = 1;
 		display_message("\\", 1);
 		return STATE_COMMAND;
 
@@ -531,5 +544,6 @@ do_exec(reg_t *reg)
 		Efree(p);
 	}
 
+	is_disp_nl = 0;
 	return 0;
 }

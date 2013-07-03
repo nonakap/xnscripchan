@@ -1,4 +1,4 @@
-/*	$Id: prescan.c,v 1.8 2002/01/08 18:13:27 nonaka Exp $	*/
+/*	$Id: prescan.c,v 1.9 2002/01/23 16:38:58 nonaka Exp $	*/
 
 /*
  * Copyright (c) 2001, 2002 NONAKA Kimihiro <aw9k-nnk@asahi-net.or.jp>
@@ -49,6 +49,8 @@ prescan(FILE *fp)
 	int maxlinenum;
 
 	_ASSERT(fp != NULL);
+
+	fseek(fp, 0L, SEEK_SET);
 
 	p = NULL;
 	is_top = 1;
@@ -171,4 +173,62 @@ prescan(FILE *fp)
 	 */
 	if (p)
 		Efree(p);
+}
+
+int
+screenmode_set(FILE *fp)
+{
+	const char modename[] = ";mode800";
+	unsigned char *linebuf;
+	int n, len;
+	int ch;
+
+	_ASSERT(fp != NULL);
+
+	fseek(fp, 0L, SEEK_SET);
+	for (n = 0; (ch = fgetc(fp)) != EOF; n++) {
+		if (is_encoded)
+			ch ^= 0x84;
+		if (ch == '\n')
+			break;
+	}
+
+	len = n;
+	linebuf = (unsigned char *)Emalloc(len + 1);
+	_ASSERT(linebuf != NULL);
+
+	fseek(fp, 0L, SEEK_SET);
+	for (n = 0; (ch = fgetc(fp)) != EOF && n < len; n++) {
+		if (is_encoded)
+			ch ^= 0x84;
+		if (ch == '\n')
+			break;
+		linebuf[n] = ch;
+	}
+	linebuf[n] = '\0';
+
+	for (n = 0; n < len; n++) {
+		if (linebuf[n] == ';') {
+			if (strcasecmp(&linebuf[n], modename) == 0) {
+				break;
+			}
+		}
+	}
+	if (n < len) {
+		printf("screen mode = 800x600\n");
+		SCREEN_MODE = SCREEN_MODE_800x600;
+		SCREEN_WIDTH = 800;
+		SCREEN_HEIGHT = 600;
+	} else if (SCREEN_MODE == SCREEN_MODE_320x240) {
+		printf("screen mode = 320x240\n");
+		SCREEN_MODE = SCREEN_MODE_320x240;
+		SCREEN_WIDTH = 320;
+		SCREEN_HEIGHT = 240;
+	} else {
+		SCREEN_MODE = SCREEN_MODE_DEFAULT;
+		SCREEN_WIDTH = 640;
+		SCREEN_HEIGHT = 480;
+	}
+
+	return 0;
 }
