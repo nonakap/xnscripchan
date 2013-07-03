@@ -1,4 +1,4 @@
-/*	$Id: screen.c,v 1.16 2002/01/13 21:43:46 nonaka Exp $	*/
+/*	$Id: screen.c,v 1.18 2002/01/18 19:36:51 nonaka Exp $	*/
 
 /*
  * Copyright (c) 2001, 2002 NONAKA Kimihiro <aw9k-nnk@asahi-net.or.jp>
@@ -29,72 +29,69 @@
  */
 
 #include "nscr.h"
-
-static int update;
-static int grayscale;
-static long nega;
-
-static image_t *bg;
-static image_t *curr;
+#include "image.h"
 
 static int is_show_text = 1;
 static int is_show_text_effect = 1;
-static point_t window_pos;
-static image_t *text_window;
 
 void
 screen_init(void)
 {
+	image_t *img;
 
-	curr = img_create(SCREEN_WIDTH, SCREEN_HEIGHT, BPP);
-	bzero(curr->data, curr->width * curr->height * BPP);
+	img = img_create(SCREEN_WIDTH, SCREEN_HEIGHT, BPP);
+	bzero(img->data, img->width * img->height * BPP);
+	CSCREEN->offscreen = (object_t *)img;
 
-	bg = img_create(SCREEN_WIDTH, SCREEN_HEIGHT, BPP);
-	bzero(bg->data, bg->width * bg->height * BPP);
+	img = img_create(SCREEN_WIDTH, SCREEN_HEIGHT, BPP);
+	bzero(img->data, img->width * img->height * BPP);
+	CSCREEN->bg = (object_t *)img;
 }
 
 void
-screen_set_bg(char *name, int effect)
+screen_set_bg(unsigned char *name)
 {
-
-	if (bg)
-		img_destroy(bg);
+	image_t *img;
 
 	if (strcasecmp(name, "black") == 0) {
-		bg = img_create(SCREEN_WIDTH, SCREEN_HEIGHT, BPP);
-		bzero(bg->data, bg->width * bg->height * BPP);
+		img = img_create(SCREEN_WIDTH, SCREEN_HEIGHT, BPP);
+		bzero(img->data, img->width * img->height * BPP);
+		img->name = Estrdup("black");
 	} else if (strcasecmp(name, "white") == 0) {
-		bg = img_create(SCREEN_WIDTH, SCREEN_HEIGHT, BPP);
-		memset(bg->data, 0xff, bg->width * bg->height * BPP);
+		img = img_create(SCREEN_WIDTH, SCREEN_HEIGHT, BPP);
+		memset(img->data, 0xff, img->width * img->height * BPP);
+		img->name = Estrdup("white");
 	} else {
-		bg = image_open(name, TRANSMODE_COPY);
+		img = image_open(name, TRANSMODE_COPY);
 	}
-	hide_chr('a', 0);
+	if (CSCREEN->bg)
+		img_destroy((image_t *)CSCREEN->bg);
+	CSCREEN->bg = (object_t *)img;
+
+	hide_chr('a');
 	CMSG->is_show_window = 0;
 
 	screen_update();
-	redraw(effect);
 }
 
 void
 screen_setwindow(unsigned char *filename, int color, rect_t *rect)
 {
+	unsigned char colormap[16];
 	image_t *img;
 	unsigned char *p;
 	int r, g, b;
 	int i;
 
 	_ASSERT(rect != NULL);
+	CSCREEN->window_pos = *rect;
 
-	window_pos.x = rect->left;
-	window_pos.y = rect->top;
-
-	if (text_window)
-		img_destroy(text_window);
-
-	if (filename != NULL) {
+	if (filename) {
 		img = image_open(filename, TRANSMODE_TAG);
 		_ASSERT(img != NULL);
+
+		rect->width = img->width;
+		rect->height = img->height;
 	} else {
 		img = img_create(rect->width, rect->height, BPP);
 		_ASSERT(img != NULL);
@@ -112,8 +109,14 @@ screen_setwindow(unsigned char *filename, int color, rect_t *rect)
 		for (i = 0; i < img->width * img->height; i++) {
 			*p++ = r; *p++ = g; *p++ = b;
 		}
+
+		snprintf(colormap, sizeof(colormap), "#%06x", color);
+		img->name = Estrdup(colormap);
 	}
-	text_window = img;
+	if (CSCREEN->text_window)
+		img_destroy((image_t *)CSCREEN->text_window);
+	CSCREEN->text_window = (object_t *)img;
+	CSCREEN->window_pos = *rect;
 
 	screen_update();
 }
@@ -122,7 +125,7 @@ void
 screen_grayscale(int v)
 {
 
-	grayscale = v;
+	CSCREEN->grayscale = v;
 
 	screen_update();
 }
@@ -133,7 +136,7 @@ screen_nega(long v)
 
 	_ASSERT(v >= 0 && v <= 2);
 
-	nega = v;
+	CSCREEN->nega = v;
 
 	screen_update();
 }
@@ -142,7 +145,19 @@ void
 screen_update(void)
 {
 
-	update = 1;
+	img_copy_image((image_t *)CSCREEN->offscreen, (image_t *)CSCREEN->bg);
+	merge_sprite((image_t *)CSCREEN->offscreen);
+	if (CSCREEN->nega == 1)
+		img_nega((image_t *)CSCREEN->offscreen, 0);
+	if (CSCREEN->grayscale)
+		img_grayscale((image_t *)CSCREEN->offscreen,
+		    CSCREEN->grayscale, 0);
+	if (CSCREEN->nega == 2)
+		img_nega((image_t *)CSCREEN->offscreen, 0);
+	if (CMSG->is_show_window)
+		img_compose((image_t *)CSCREEN->offscreen,
+		    (image_t *)CSCREEN->text_window, 0,
+		    CSCREEN->window_pos.left, CSCREEN->window_pos.top);
 }
 
 void
@@ -163,38 +178,23 @@ void
 screen_show_text_window(void)
 {
 
-	img_compose(curr, text_window, 0, window_pos.x, window_pos.y);
-	sys_copy_area(curr, window_pos.x, window_pos.y,
-	    text_window->width, text_window->height,
-	    window_pos.x, window_pos.y);
+	img_compose((image_t *)CSCREEN->offscreen,
+	    (image_t *)CSCREEN->text_window, 0,
+	    CSCREEN->window_pos.left, CSCREEN->window_pos.top);
+	sys_copy_area((image_t *)CSCREEN->offscreen,
+	    CSCREEN->window_pos.left, CSCREEN->window_pos.top,
+	    CSCREEN->window_pos.width, CSCREEN->window_pos.height,
+	    CSCREEN->window_pos.left, CSCREEN->window_pos.top);
 }
 
 void
-redraw(int effect)
+redraw(rect_t *rect)
 {
 
-	img_copy_image(curr, bg);
-	merge_sprite(curr);
-	if (nega == 1)
-		img_nega(curr, 0);
-	if (grayscale)
-		img_grayscale(curr, grayscale, 0);
-	if (nega == 2)
-		img_nega(curr, 0);
-	if (CMSG->is_show_window)
-		img_compose(curr, text_window, 0, window_pos.x, window_pos.y);
-
-	switch (effect) {
-	case 0:
-		break;
-
-	default:
-		sys_copy_area(curr, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 0);
-		break;
-	}
+	sys_copy_area((image_t *)CSCREEN->offscreen,
+	    rect->left, rect->top, rect->width, rect->height,
+	    rect->left, rect->top);
 
 	if (is_show_text)
 		text_redraw();
-
-	update = 0;
 }

@@ -1,4 +1,4 @@
-/*	$Id: symbol.h,v 1.5 2002/01/08 18:13:27 nonaka Exp $	*/
+/*	$Id: symbol.h,v 1.6 2002/01/18 18:23:39 nonaka Exp $	*/
 
 /*
  * Copyright (c) 2001, 2002 NONAKA Kimihiro <aw9k-nnk@asahi-net.or.jp>
@@ -31,14 +31,18 @@
 #ifndef	__SYMBOL_H__
 #define	__SYMBOL_H__
 
+#include "misc.h"
+
 typedef struct symbol_tag {
-	int type;
-	char *sym;
+	object_t	obj;
+
+	int		type;
+	char		*sym;
 	union {
-		void *ptr;
-		char *str;
-		long val;
-		int (*func)(reg_t *, long);
+		void	*ptr;
+		char	*str;
+		long	val;
+		int	(*func)(reg_t *, long);
 	} u;
 	struct symbol_tag *next;
 } symbol_t;
@@ -50,10 +54,9 @@ enum alias_e {
 	NUM_ALIAS
 };
 
-symbol_t * symbol_lookup(char *);
-void symbol_show(void);
-int symbol_add_numalias(char *, long);
-int symbol_add_stralias(char *, void *);
-int symbol_add_command(char *, void *);
+int symbol_add(object_t **, char *, void *, int);
+void symbol_destroy(object_t *);
+symbol_t *symbol_lookup(object_t *, char *);
+void symbol_show(object_t *);
 
 #endif /* __SYMBOL_H__ */

@@ -1,4 +1,4 @@
-/*	$Id: display.c,v 1.15 2002/01/13 21:43:46 nonaka Exp $	*/
+/*	$Id: display.c,v 1.17 2002/01/18 19:36:51 nonaka Exp $	*/
 
 /*
  * Copyright (c) 2001, 2002 NONAKA Kimihiro <aw9k-nnk@asahi-net.or.jp>
@@ -63,7 +63,7 @@ text_setwindow(long *v, long n, unsigned char *filename)
 	CTEXT->cache_attr =
 	    (long *)Ecalloc(sizeof(long), CTEXT->cache_size);
 
-	CMSG->size = CTEXT->max_tx * CTEXT->max_ty * 2;
+	CMSG->size = CTEXT->max_tx * CTEXT->max_ty * 16;
 	if (CMSG->data)
 		Efree(CMSG->data);
 	CMSG->data = (unsigned short *)
@@ -98,6 +98,19 @@ text_set_clickstr(unsigned char *str, size_t num, long column)
 }
 
 void
+text_set_locate(long x, long y)
+{
+
+	_ASSERT(x >= 0 && x < CTEXT->max_tx);
+	_ASSERT(y >= 0 && y < CTEXT->max_ty);
+
+	CTEXT->cur_tx = x;
+	CTEXT->cur_ty = y;
+	CTEXT->curx = CTEXT->cur_left + (CFONT->width + CFONT->pitch_x) * x;
+	CTEXT->curx = CTEXT->cur_top + (CFONT->height + CFONT->pitch_y) * y;
+}
+
+void
 text_setrect(rect_t *rect, int *col, unsigned char *msg, size_t msglen)
 {
 	int ncolumn;
@@ -129,7 +142,7 @@ newpage(void)
 	bzero(CTEXT->cache_data, CTEXT->cache_size * sizeof(unsigned short));
 	bzero(CTEXT->cache_attr, CTEXT->cache_size * sizeof(long));
 
-	redraw(1);
+	redraw(&CSCREEN->window_pos);
 }
 
 void

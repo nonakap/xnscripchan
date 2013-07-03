@@ -1,4 +1,4 @@
-/*	$Id: _parse.c,v 1.16 2002/01/15 17:43:07 nonaka Exp $	*/
+/*	$Id: _parse.c,v 1.17 2002/01/18 18:23:39 nonaka Exp $	*/
 
 /*
  * Copyright (c) 2001, 2002 NONAKA Kimihiro <aw9k-nnk@asahi-net.or.jp>
@@ -43,28 +43,27 @@ static int state_check_image(reg_t *);
 static int state_check_paren(reg_t *);
 static int state_check_token0(reg_t *);
 static int state_check_token1(reg_t *);
-
 static int do_exec(reg_t *);
 
 static int (*state_funcp[STATE_NUM])(reg_t *) = {
-	NULL,		/* error */
-	state_command,	/* command */
-	state_arg,	/* arg */
-	state_arg_next,	/* arg next */
+	NULL,			/* error */
+	NULL,			/* end */
+	state_command,		/* command */
+	state_arg,		/* arg */
+	state_arg_next,		/* arg next */
 	state_check_image,
 	state_check_paren,
 	state_check_token0,
 	state_check_token1,
-	NULL,		/* eval */
-	NULL,		/* exec */
-	NULL,		/* end */
-	NULL,		/* buttonwait */
-	NULL,		/* selectwait */
-	NULL,		/* clickwait */
-	NULL,		/* clickpagewait */
-	NULL,		/* effectwait */
-	NULL,		/* nextcommand */
-	NULL,		/* waittimer */
+	NULL,			/* exec */
+	NULL,			/* nextcommand */
+	NULL,			/* effect */
+	NULL,			/* buttonwait */
+	NULL,			/* selectwait */
+	NULL,			/* clickwait */
+	NULL,			/* clickpagewait */
+	NULL,			/* effectwait */
+	NULL,			/* waittimer */
 };
 
 int token;
@@ -117,6 +116,11 @@ parse(void)
 		return 0;
 	}
 
+	if (CEFFECT->no > 0) {
+		state = do_effect();
+		return 0;
+	}
+
 	token = yylex();
 	if (token == 0)
 		return 1;
@@ -145,24 +149,28 @@ parse(void)
 static int
 is_command(reg_t *reg)
 {
+	static const unsigned char *selcmd[] = {
+		"select",
+		"selgosub",
+		"selnum"
+	};
+	size_t s;
 	symbol_t *p;
 
-	p = symbol_lookup(reg->u.str);
+	p = symbol_lookup(CCOMMAND->symbol, reg->u.str);
 	if (p == NULL)
 		return 0;
-	if (p->type != SYMBOL_COMMAND)
-		return 0;
-
-	if ((strcasecmp(reg->u.str, "select") == 0)
-	    || (strcasecmp(reg->u.str, "selgosub") == 0)
-	    || (strcasecmp(reg->u.str, "selnum") == 0)) {
-		reg->subtype = TOKEN_SELECT_COMMAND;
-	} else {
-		reg->subtype = TOKEN_COMMAND;
-	}
 
 	reg->type = TOKEN_COMMAND;
 	reg->func = p->u.func;
+	reg->subtype = p->type;
+	for (s = 0; s < NELEMS(selcmd); s++) {
+		if (strcasecmp(reg->u.str, selcmd[s]) == 0) {
+			reg->subtype |= SELECT_COMMAND;
+			break;
+		}
+	}
+
 	narg.u.val = 0;
 
 	return 1;
@@ -187,11 +195,11 @@ state_command(reg_t *reg)
 
 	case TOKEN_JSTRING:
 		display_message(reg->u.str, strlen(reg->u.str));
-		Efree(reg->u.str);		/* :-) */
+		Efree(reg->u.str);
 		return STATE_COMMAND;
 
 	case TOKEN_VARNUM: {
-		unsigned char buf[256];	/* XXX */
+		unsigned char buf[256];
 
 		DPRINTF(("show varnum[%ld] = 0x%lx\n",
 		    reg->u.val, varnum_get(reg->u.val)));
@@ -222,7 +230,7 @@ state_command(reg_t *reg)
 		return STATE_COMMAND;
 
 	case '@':
-		display_message("@\n", 2);
+		display_message("@", 1);
 		return STATE_COMMAND;
 
 	case '\\':
@@ -231,7 +239,7 @@ state_command(reg_t *reg)
 
 	case TOKEN_LABEL:
 		label_access(reg->u.str + 1);	/* skip '*' */
-		Efree(reg->u.str);		/* :-) */
+		Efree(reg->u.str);
 		return STATE_COMMAND;
 
 	case '+':
@@ -259,7 +267,7 @@ state_arg(reg_t *reg)
 		return STATE_EXEC;
 
 	case TOKEN_NL:
-		if (command.subtype == TOKEN_SELECT_COMMAND)
+		if (command.subtype & SELECT_COMMAND)
 			return STATE_ARG;
 
 		push(&narg);
@@ -290,7 +298,7 @@ state_arg(reg_t *reg)
 
 	case TOKEN_JSTRING:
 		display_message(reg->u.str, strlen(reg->u.str));
-		Efree(reg->u.str);	/* :-) */
+		Efree(reg->u.str);
 
 		push(&narg);
 		push(&command);
@@ -299,7 +307,7 @@ state_arg(reg_t *reg)
 	case TOKEN_STRING: {
 		symbol_t *p;
 
-		p = symbol_lookup(reg->u.str);
+		p = symbol_lookup(CALIAS->symbol, reg->u.str);
 		if (p != NULL) {
 			switch (p->type) {
 			case SYMBOL_NUMALIAS:
@@ -315,12 +323,12 @@ state_arg(reg_t *reg)
 				reg->u.str = NULL;
 
 				reg->type = TOKEN_STRING;
-				reg->u.str = varstr_get(p->u.val);
+				reg->u.str = Estrdup(p->u.str);
 				break;
 
-			case SYMBOL_COMMAND:
-				/* XXX: rmenu の reset でひっかかるのね… */
-				break;
+			default:
+				_ASSERT(0);
+				return STATE_ERROR;
 			}
 		}
 		}
@@ -370,7 +378,7 @@ state_arg_next(reg_t *reg)
 
 	case TOKEN_JSTRING:
 		display_message(reg->u.str, strlen(reg->u.str));
-		Efree(reg->u.str);	/* :-) */
+		Efree(reg->u.str);
 
 		push(&narg);
 		push(&command);
@@ -493,7 +501,12 @@ do_exec(reg_t *reg)
 	}
 
 	DPRINTF(("[lineno = %d] ", lineno));
-	state = cmd.func(p, n);
+	if (cmd.subtype & core->block) {
+		state = cmd.func(p, n);
+	} else {
+		printf("ignore command[%s] in lineno %d\n", cmd.u.str, lineno);
+		state = STATE_COMMAND;
+	}
 	_ASSERT(state != STATE_ERROR);
 	switch (state) {
 	case STATE_NEXTCOMMAND:

@@ -1,4 +1,4 @@
-/*	$Id: button.c,v 1.10 2002/01/08 18:13:27 nonaka Exp $	*/
+/*	$Id: button.c,v 1.11 2002/01/18 18:23:39 nonaka Exp $	*/
 
 /*
  * Copyright (c) 2001, 2002 NONAKA Kimihiro <aw9k-nnk@asahi-net.or.jp>
@@ -39,6 +39,7 @@ typedef struct button_tag {
 
 static long btn_var = -1;
 static int prev = -1;
+static button_t *prev_btn;
 
 static char *button_name = NULL;
 static long nbutton = 0;
@@ -87,6 +88,7 @@ button_clear(void)
 	nbutton = 0;
 	btn_var = -1;
 	prev = -1;
+	prev_btn = NULL;
 }
 
 void
@@ -117,9 +119,6 @@ void
 button_do(long btnno, point_t *point)
 {
 	button_t *p;
-
-	_ASSERT(button_name != NULL);
-	_ASSERT(button_top != NULL);
 
 	switch (btnno) {
 	case 0:
@@ -158,11 +157,15 @@ button_move(point_t *point)
 			break;
 		}
 	}
-	if (p == NULL)
+	if (p == NULL) {
 		curr = -1;
+	}
 
 	if (curr != prev) {
-		redraw(1);
+		if (prev != -1) {
+			_ASSERT(prev_btn != NULL);
+			redraw(&prev_btn->sel_rect);
+		}
 		if (curr != -1) {
 			sys_copy_area(btn_image,
 			    p->draw_rect.left, p->draw_rect.top,
@@ -170,6 +173,7 @@ button_move(point_t *point)
 			    p->sel_rect.left, p->sel_rect.top);
 		}
 		prev = curr;
+		prev_btn = p;
 	}
 }
 

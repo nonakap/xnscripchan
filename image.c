@@ -1,4 +1,4 @@
-/*	$Id: image.c,v 1.19 2002/01/15 17:43:07 nonaka Exp $	*/
+/*	$Id: image.c,v 1.20 2002/01/18 18:23:39 nonaka Exp $	*/
 /* $libvimage-Id: vimage.c,v 1.14 1999/01/22 21:21:39 ryo Exp $ */
 
 #ifndef	IMAGE_CACHE
@@ -38,7 +38,6 @@
 #include "image.h"
 
 static unsigned char alpha_map[256][256][256];
-static unsigned char clarity_map[256][256];
 
 #if (IMAGE_CACHE > 0)
 static int imagecache_init(void);
@@ -58,13 +57,6 @@ image_init(void)
 			for (a = 0; a < 256; a++) {
 				alpha_map[d][s][a] = (d*a+s*(255-a))/255;
 			}
-		}
-	}
-
-	/* create clarity table */
-	for (d = 0; d < 256; d++) {
-		for (a = 0; a < 256; a++) {
-			clarity_map[d][a] = (d * a) / 255;
 		}
 	}
 
@@ -163,11 +155,11 @@ image_open(unsigned char *filename, int transmode)
 		mem_dump(tmp, 32, "signature");
 		mem_dump((unsigned char *)&aq, sizeof(aq), "archive info");
 		_ASSERT(0);
-		img = img_create(SCREEN_WIDTH, SCREEN_HEIGHT, BPP);
-		bzero(img->data, img->width * img->height * BPP);
-		info.transmode = TRANSMODE_COPY;	/* XXX */
+		return NULL;
 	}
 	_ASSERT(img != NULL);
+
+	img->name = Estrdup(filename);
 
 	if (transmode != TRANSMODE_TAG)
 		info.transmode = transmode;
@@ -294,6 +286,8 @@ img_destroy(image_t *image)
 #if (IMAGE_CACHE > 0)
 		imagecache_delete(image);
 #else /* IMAGE_CACHE == 0 */
+		if (image->name != NULL)
+			Efree(image->name);
 		if (image->data != NULL)
 			Efree(image->data);
 		if (image->mask != NULL)
@@ -426,7 +420,7 @@ img_compose(image_t *bg, image_t *fg, int copy, int xoff, int yoff)
 {
 	image_t *image = NULL;
 	unsigned char *s, *d, *m;
-	int height, width;
+	int width, height;
 	int bg_x, bg_y;
 	int fg_x, fg_y;
 	int h, w;
@@ -436,9 +430,9 @@ img_compose(image_t *bg, image_t *fg, int copy, int xoff, int yoff)
 	_ASSERT(fg != NULL);
 	_ASSERT(bg->bpp == fg->bpp);
 
-	fg_x = fg_y = bg_x = bg_y = 0;
 	width = bg->width;
 	height = bg->height;
+	fg_x = fg_y = bg_x = bg_y = 0;
 
 	if (xoff < 0) {
 		width += xoff;
@@ -473,17 +467,19 @@ img_compose(image_t *bg, image_t *fg, int copy, int xoff, int yoff)
 		image = bg;
 
 	if (fg->has_clarity) {
+		unsigned char t;
+
 		c = fg->clarity;
 		if (fg->mask == NULL) {
 			for (h = 0; h < height; h++) {
 				s = fg->data + ((fg_y + h) * fg->width + fg_x) * BPP;
 				d = image->data + ((bg_y + h) * image->width + bg_x) * BPP;
 				for (w = 0; w < width; w++, m++) {
-					*d = alpha_map[*d][*s][c];
+					*d = alpha_map[*s][*d][c];
 					d++;
-					*d = alpha_map[*d][*s][c];
+					*d = alpha_map[*s][*d][c];
 					d++;
-					*d = alpha_map[*d][*s][c];
+					*d = alpha_map[*s][*d][c];
 					d++;
 				}
 			}
@@ -496,11 +492,14 @@ img_compose(image_t *bg, image_t *fg, int copy, int xoff, int yoff)
 					d = image->data + ((bg_y + h) * image->width + bg_x) * BPP;
 					m = fg->mask + (fg_y + h) * fg->width + fg_x;
 					for (w = 0; w < width; w++, m++) {
-						*d = alpha_map[*d][*s][*m];
+						t = alpha_map[*s][*d][c];
+						*d = alpha_map[*d][t][*m];
 						d++; s++;
-						*d = alpha_map[*d][*s][*m];
+						t = alpha_map[*s][*d][c];
+						*d = alpha_map[*d][t][*m];
 						d++; s++;
-						*d = alpha_map[*d][*s][*m];
+						t = alpha_map[*s][*d][c];
+						*d = alpha_map[*d][t][*m];
 						d++; s++;
 					}
 				}
@@ -512,11 +511,14 @@ img_compose(image_t *bg, image_t *fg, int copy, int xoff, int yoff)
 					d = image->data + ((bg_y + h) * image->width + bg_x) * BPP;
 					m = fg->mask + ((fg_y + h) * fg->width + fg_x) * BPP;
 					for (w = 0; w < width; w++) {
-						*d = alpha_map[*d][*s][*m];
+						t = alpha_map[*s][*d][c];
+						*d = alpha_map[*d][t][*m];
 						d++; s++; m++;
-						*d = alpha_map[*d][*s][*m];
+						t = alpha_map[*s][*d][c];
+						*d = alpha_map[*d][t][*m];
 						d++; s++; m++;
-						*d = alpha_map[*d][*s][*m];
+						t = alpha_map[*s][*d][c];
+						*d = alpha_map[*d][t][*m];
 						d++; s++; m++;
 					}
 				}
@@ -731,6 +733,8 @@ imagecache_insert(image_t *img, unsigned char *filename)
 			if (!ic->inuse)
 				break;
 		if (ic) {
+			cache_num--;
+
 			/* Unlink this image from cache list */
 			if (ic == cache_top && ic->next)
 				cache_top = ic->next;
@@ -745,6 +749,8 @@ imagecache_insert(image_t *img, unsigned char *filename)
 
 			/* Now destroy image */
 			if (ic->image) {
+				if (ic->image->name)
+					Efree(ic->image->name);
 				if (ic->image->data)
 					Efree(ic->image->data);
 				if (ic->image->mask)
@@ -757,7 +763,6 @@ imagecache_insert(image_t *img, unsigned char *filename)
 				Efree(ic->filename);
 			Efree(ic);
 		}
-		cache_num--;
 	}
 }
 

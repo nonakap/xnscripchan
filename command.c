@@ -1,4 +1,4 @@
-/*	$Id: command.c,v 1.24 2002/01/15 17:43:07 nonaka Exp $	*/
+/*	$Id: command.c,v 1.27 2002/01/18 19:36:51 nonaka Exp $	*/
 
 /*
  * Copyright (c) 2001, 2002 NONAKA Kimihiro <aw9k-nnk@asahi-net.or.jp>
@@ -61,13 +61,14 @@ static int cmd_cmp(reg_t *, long);
 static int cmd_csp(reg_t *, long);
 static int cmd_date(reg_t *, long);
 static int cmd_dec(reg_t *, long);
-//static int cmd_defaultfont(reg_t *, long);
+static int cmd_defaultfont(reg_t *, long);
 static int cmd_defaultspeed(reg_t *, long);
 static int cmd_definereset(reg_t *, long);
 static int cmd_defmp3vol(reg_t *, long);
 static int cmd_defsevol(reg_t *, long);
 static int cmd_defvoicevol(reg_t *, long);
 static int cmd_delay(reg_t *, long);
+//static int cmd_dim(reg_t *, long);
 static int cmd_div(reg_t *, long);
 static int cmd_dwave(reg_t *, long);
 static int cmd_dwavestop(reg_t *, long);
@@ -97,10 +98,10 @@ static int cmd_labellog(reg_t *, long);
 static int cmd_ld(reg_t *, long);
 static int cmd_len(reg_t *, long);
 static int cmd_loadgame(reg_t *, long);
-//static int cmd_locate(reg_t *, long);
+static int cmd_locate(reg_t *, long);
 static int cmd_lookbackbutton(reg_t *, long);
 static int cmd_lookbackcolor(reg_t *, long);
-//static int cmd_lookbackflush(reg_t *, long);
+static int cmd_lookbackflush(reg_t *, long);
 //static int cmd_lookbackvoice(reg_t *, long);
 static int cmd_lsp(reg_t *, long);
 static int cmd_lsph(reg_t *, long);
@@ -118,6 +119,12 @@ static int cmd_monocro(reg_t *, long);
 //static int cmd_mousecursor(reg_t *, long);
 static int cmd_mov(reg_t *, long);
 static int cmd_mov3(reg_t *, long);
+static int cmd_mov4(reg_t *, long);
+static int cmd_mov5(reg_t *, long);
+static int cmd_mov6(reg_t *, long);
+static int cmd_mov7(reg_t *, long);
+static int cmd_mov8(reg_t *, long);
+static int cmd_mov9(reg_t *, long);
 static int cmd_mov10(reg_t *, long);
 static int cmd_mp3(reg_t *, long);
 static int cmd_mp3loop(reg_t *, long);
@@ -156,7 +163,6 @@ static int cmd_selectcolor(reg_t *, long);
 static int cmd_selgosub(reg_t *, long);
 static int cmd_selnum(reg_t *, long);
 static int cmd_setcursor(reg_t *, long);
-static int cmd_setspeed(reg_t *, long);
 static int cmd_setwindow(reg_t *, long);
 static int cmd_skip(reg_t *, long);
 static int cmd_soundpressplgin(reg_t *, long);
@@ -183,154 +189,161 @@ static int cmd_wavestop(reg_t *, long);
 static int cmd_windoweffect(reg_t *, long);
 
 static struct command_table_tag {
-	unsigned char *str;
-	int (*funcp)(reg_t *, long);
+	unsigned char	*str;
+	int		(*funcp)(reg_t *, long);
+	int		block;
 } cmd_tbl[] = {
-	{ "abssetcursor",	NULL },
-	{ "add",		cmd_add },
-	{ "amsp",		cmd_amsp },
-	{ "arc",		cmd_arc },
-	{ "autoclick",		cmd_autoclick },
-	{ "avi",		NULL },
-	{ "bg",			cmd_bg },
-	{ "bgalia",		NULL },
-	{ "blt",		cmd_blt },
-	{ "br",			cmd_br },
-	{ "btn",		cmd_btn },
-	{ "btndef",		cmd_btndef },
-	{ "btnwait",		cmd_btnwait },
-	{ "btnwait2",		cmd_btnwait2 },
-	{ "caption",		cmd_caption },
-	{ "cdfadeout",		cmd_cdfadeout },
-	{ "cl",			cmd_cl },
-	{ "click",		cmd_click },
-	{ "clickpos",		cmd_clickpos },
-	{ "clickstr",		cmd_clickstr },
-	{ "clickvoice",		NULL },
-	{ "cmp",		cmd_cmp },
-	{ "csp",		cmd_csp },
-	{ "date",		cmd_date },
-	{ "dec",		cmd_dec },
-	{ "defaultfont",	NULL },
-	{ "defaultspeed",	cmd_defaultspeed },
-	{ "definereset",	cmd_definereset },
-	{ "defmp3vol",		cmd_defmp3vol },
-	{ "defsevol",		cmd_defsevol },
-	{ "defvoicevol",	cmd_defvoicevol },
-	{ "delay",		cmd_delay },
-	{ "div",		cmd_div },
-	{ "dwave",		cmd_dwave },
-	{ "dwavestop",		cmd_dwavestop },
-	{ "effect",		cmd_effect },
-	{ "effectblank",	cmd_effectblank },
-	{ "end",		cmd_end },
-	{ "erasetextwindow",	cmd_erasetextwindow },
-	{ "filelog",		cmd_filelog },
-	{ "game",		cmd_game },
-	{ "getini",		NULL },
-	{ "getreg",		cmd_getreg },
-	{ "gettimer",		cmd_gettimer },
-	{ "getversion",		cmd_getversion },
-	{ "globalon",		cmd_globalon },
-	{ "gosub",		cmd_gosub },
-	{ "goto",		cmd_goto },
-	{ "humanz",		cmd_humanz },
-	{ "if",			cmd_if },
-	{ "inc",		cmd_inc },
-	{ "inputstr",		cmd_inputstr },
-	{ "intlimit",		cmd_intlimit },
-	{ "itoa",		cmd_itoa },
-	{ "jumpb",		cmd_jumpb },
-	{ "jumpf",		cmd_jumpf },
-	{ "killmenu",		cmd_killmenu },
-	{ "labellog",		cmd_labellog },
-	{ "ld",			cmd_ld },
-	{ "len",		cmd_len },
-	{ "loadgame",		cmd_loadgame },
-	{ "locate",		NULL },
-	{ "lookbackbutton",	cmd_lookbackbutton },
-	{ "lookbackcolor",	cmd_lookbackcolor },
-	{ "lookbackflush",	NULL },
-	{ "lookbackvoice",	NULL },
-	{ "lsp",		cmd_lsp },
-	{ "lsph",		cmd_lsph },
-	{ "menu_click_def ",	NULL },
-	{ "menu_click_page",	NULL },
-	{ "menu_full",		cmd_menu_full },
-	{ "menu_window",	NULL },
-	{ "menuselectcolor",	cmd_menuselectcolor },
-	{ "menuselectvoice",	NULL },
-	{ "menusetwindow",	cmd_menusetwindow },
-	{ "mesbox",		cmd_mesbox },
-	{ "mod",		cmd_mod },
-	{ "mode_ext",		cmd_mode_ext },
-	{ "monocro",		cmd_monocro },
-	{ "mousecursor",	NULL },
-	{ "mov",		cmd_mov },
-	{ "mov3",		cmd_mov3 },
-	{ "mov10",		cmd_mov10 },
-	{ "mp3",		cmd_mp3 },
-	{ "mp3loop",		cmd_mp3loop },
-	{ "mp3save",		cmd_mp3save },
-	{ "msp",		cmd_msp },
-	{ "mul",		cmd_mul },
-	{ "nega",		cmd_nega },
-	{ "notif",		cmd_notif },
-	{ "nsa",		cmd_nsa },
-	{ "numalias",		cmd_numalias },
-	{ "ofscpy",		cmd_ofscpy },
-	{ "play",		cmd_play },
-	{ "playonce",		cmd_playonce },
-	{ "playstop",		cmd_playstop },
-	{ "print",		cmd_print },
-	{ "puttext",		cmd_puttext },
-	{ "quakex",		cmd_quakex },
-	{ "quakey",		cmd_quakey },
-	{ "reset",		cmd_reset },
-	{ "resettimer",		cmd_resettimer },
-	{ "return",		cmd_return },
-	{ "rlookback",		NULL },
-	{ "rmenu",		cmd_rmenu },
-	{ "rmode",		cmd_rmode },
-	{ "rnd",		cmd_rnd },
-	{ "rnd2",		cmd_rnd2 },
-	{ "roff",		NULL },
-	{ "savegame",		cmd_savegame },
-	{ "savename",		cmd_savename },
-	{ "savenumber",		cmd_savenumber },
-	{ "saveoff",		cmd_saveoff },
-	{ "saveon",		cmd_saveon },
-	{ "select",		cmd_select },
-	{ "selectcolor",	cmd_selectcolor },
-	{ "selectvoice",	NULL },
-	{ "selgosub",		cmd_selgosub },
-	{ "selnum",		cmd_selnum },
-	{ "setcursor",		cmd_setcursor },
-	{ "setspeed",		cmd_setspeed },		/* !sd */
-	{ "setwindow",		cmd_setwindow },
-	{ "skip",		cmd_skip },
-	{ "soundpressplgin",	cmd_soundpressplgin },
-	{ "spi",		cmd_spi },
-	{ "stop",		cmd_stop },
-	{ "stralias",		cmd_stralias },
-	{ "sub",		cmd_sub },
-	{ "systemcall",		cmd_systemcall },
-	{ "tal",		NULL },
-	{ "textclear",		cmd_textclear },
-	{ "textoff",		NULL },
-	{ "texton",		NULL },
-	{ "textspeed",		cmd_textspeed },
-	{ "transmode",		cmd_transmode },
-	{ "trap",		cmd_trap },
-	{ "underline",		cmd_underline },
-	{ "versionstr",		cmd_versionstr },
-	{ "vsp",		cmd_vsp },
-	{ "wait",		cmd_wait },
-	{ "waittimer",		cmd_waittimer },
-	{ "wave",		cmd_wave },
-	{ "waveloop",		cmd_waveloop },
-	{ "wavestop",		cmd_wavestop },
-	{ "windoweffect",	cmd_windoweffect },
+	{ "abssetcursor",	NULL,			BLOCK_EX },
+	{ "add",		cmd_add,		BLOCK_DEF|BLOCK_EX },
+	{ "amsp",		cmd_amsp,		BLOCK_EX },
+	{ "arc",		cmd_arc,		BLOCK_DEF },
+	{ "autoclick",		cmd_autoclick,		BLOCK_EX },
+	{ "avi",		NULL,			BLOCK_EX },
+	{ "bg",			cmd_bg,			BLOCK_EX },
+	{ "bgalia",		NULL,			BLOCK_DEF },
+	{ "blt",		cmd_blt,		BLOCK_EX },
+	{ "br",			cmd_br,			BLOCK_EX },
+	{ "btn",		cmd_btn,		BLOCK_EX },
+	{ "btndef",		cmd_btndef,		BLOCK_EX },
+	{ "btnwait",		cmd_btnwait,		BLOCK_EX },
+	{ "btnwait2",		cmd_btnwait2,		BLOCK_EX },
+	{ "caption",		cmd_caption,		BLOCK_DEF|BLOCK_EX },
+	{ "cdfadeout",		cmd_cdfadeout,		BLOCK_DEF },
+	{ "cl",			cmd_cl,			BLOCK_EX },
+	{ "click",		cmd_click,		BLOCK_EX },
+	{ "clickpos",		cmd_clickpos,		BLOCK_EX },
+	{ "clickstr",		cmd_clickstr,		BLOCK_DEF },
+	{ "clickvoice",		NULL,			BLOCK_DEF },
+	{ "cmp",		cmd_cmp,		BLOCK_DEF|BLOCK_EX },
+	{ "csp",		cmd_csp,		BLOCK_EX },
+	{ "date",		cmd_date,		BLOCK_DEF|BLOCK_EX },
+	{ "dec",		cmd_dec,		BLOCK_DEF|BLOCK_EX },
+	{ "defaultfont",	cmd_defaultfont,	BLOCK_DEF },
+	{ "defaultspeed",	cmd_defaultspeed,	BLOCK_DEF },
+	{ "definereset",	cmd_definereset,	BLOCK_EX },
+	{ "defmp3vol",		cmd_defmp3vol,		BLOCK_DEF },
+	{ "defsevol",		cmd_defsevol,		BLOCK_DEF },
+	{ "defvoicevol",	cmd_defvoicevol,	BLOCK_DEF },
+	{ "delay",		cmd_delay,		BLOCK_EX },
+	{ "dim",		NULL,			BLOCK_DEF },
+	{ "div",		cmd_div,		BLOCK_DEF|BLOCK_EX },
+	{ "dwave",		cmd_dwave,		BLOCK_EX },
+	{ "dwavestop",		cmd_dwavestop,		BLOCK_EX },
+	{ "effect",		cmd_effect,		BLOCK_DEF },
+	{ "effectblank",	cmd_effectblank,	BLOCK_DEF },
+	{ "end",		cmd_end,		BLOCK_DEF|BLOCK_EX },
+	{ "erasetextwindow",	cmd_erasetextwindow,	BLOCK_EX },
+	{ "filelog",		cmd_filelog,		BLOCK_DEF },
+	{ "game",		cmd_game,		BLOCK_DEF },
+	{ "getini",		NULL,			BLOCK_DEF|BLOCK_EX },
+	{ "getreg",		cmd_getreg,		BLOCK_DEF|BLOCK_EX },
+	{ "gettimer",		cmd_gettimer,		BLOCK_EX },
+	{ "getversion",		cmd_getversion,		BLOCK_DEF|BLOCK_EX },
+	{ "globalon",		cmd_globalon,		BLOCK_DEF },
+	{ "gosub",		cmd_gosub,		BLOCK_DEF|BLOCK_EX },
+	{ "goto",		cmd_goto,		BLOCK_DEF|BLOCK_EX },
+	{ "humanz",		cmd_humanz,		BLOCK_DEF },
+	{ "if",			cmd_if,			BLOCK_DEF|BLOCK_EX },
+	{ "inc",		cmd_inc,		BLOCK_DEF|BLOCK_EX },
+	{ "inputstr",		cmd_inputstr,		BLOCK_EX },
+	{ "intlimit",		cmd_intlimit,		BLOCK_DEF },
+	{ "itoa",		cmd_itoa,		BLOCK_DEF|BLOCK_EX },
+	{ "jumpb",		cmd_jumpb,		BLOCK_DEF|BLOCK_EX },
+	{ "jumpf",		cmd_jumpf,		BLOCK_DEF|BLOCK_EX },
+	{ "killmenu",		cmd_killmenu,		BLOCK_DEF },
+	{ "labellog",		cmd_labellog,		BLOCK_DEF },
+	{ "ld",			cmd_ld,			BLOCK_EX },
+	{ "len",		cmd_len,		BLOCK_DEF|BLOCK_EX },
+	{ "loadgame",		cmd_loadgame,		BLOCK_EX },
+	{ "locate",		cmd_locate,		BLOCK_EX },
+	{ "lookbackbutton",	cmd_lookbackbutton,	BLOCK_DEF },
+	{ "lookbackcolor",	cmd_lookbackcolor,	BLOCK_DEF },
+	{ "lookbackflush",	cmd_lookbackflush,	BLOCK_EX },
+	{ "lookbackvoice",	NULL,			BLOCK_DEF },
+	{ "lsp",		cmd_lsp,		BLOCK_EX },
+	{ "lsph",		cmd_lsph,		BLOCK_EX },
+	{ "menu_click_def ",	NULL,			BLOCK_EX },
+	{ "menu_click_page",	NULL,			BLOCK_EX },
+	{ "menu_full",		cmd_menu_full,		BLOCK_EX },
+	{ "menu_window",	NULL,			BLOCK_EX },
+	{ "menuselectcolor",	cmd_menuselectcolor,	BLOCK_DEF },
+	{ "menuselectvoice",	NULL,			BLOCK_DEF },
+	{ "menusetwindow",	cmd_menusetwindow,	BLOCK_DEF },
+	{ "mesbox",		cmd_mesbox,		BLOCK_DEF|BLOCK_EX },
+	{ "mod",		cmd_mod,		BLOCK_DEF|BLOCK_EX },
+	{ "mode_ext",		cmd_mode_ext,		BLOCK_DEF },
+	{ "monocro",		cmd_monocro,		BLOCK_EX },
+	{ "mousecursor",	NULL,			BLOCK_DEF|BLOCK_EX },
+	{ "mov",		cmd_mov,		BLOCK_DEF|BLOCK_EX },
+	{ "mov3",		cmd_mov3,		BLOCK_DEF|BLOCK_EX },
+	{ "mov4",		cmd_mov4,		BLOCK_DEF|BLOCK_EX },
+	{ "mov5",		cmd_mov5,		BLOCK_DEF|BLOCK_EX },
+	{ "mov6",		cmd_mov6,		BLOCK_DEF|BLOCK_EX },
+	{ "mov7",		cmd_mov7,		BLOCK_DEF|BLOCK_EX },
+	{ "mov8",		cmd_mov8,		BLOCK_DEF|BLOCK_EX },
+	{ "mov9",		cmd_mov9,		BLOCK_DEF|BLOCK_EX },
+	{ "mov10",		cmd_mov10,		BLOCK_DEF|BLOCK_EX },
+	{ "mp3",		cmd_mp3,		BLOCK_EX },
+	{ "mp3loop",		cmd_mp3loop,		BLOCK_EX },
+	{ "mp3save",		cmd_mp3save,		BLOCK_EX }, /* XXX */
+	{ "msp",		cmd_msp,		BLOCK_EX },
+	{ "mul",		cmd_mul,		BLOCK_DEF|BLOCK_EX },
+	{ "nega",		cmd_nega,		BLOCK_EX },
+	{ "notif",		cmd_notif,		BLOCK_DEF|BLOCK_EX },
+	{ "nsa",		cmd_nsa,		BLOCK_DEF },
+	{ "numalias",		cmd_numalias,		BLOCK_DEF },
+	{ "ofscpy",		cmd_ofscpy,		BLOCK_EX },
+	{ "play",		cmd_play,		BLOCK_EX },
+	{ "playonce",		cmd_playonce,		BLOCK_EX },
+	{ "playstop",		cmd_playstop,		BLOCK_EX },
+	{ "print",		cmd_print,		BLOCK_EX },
+	{ "puttext",		cmd_puttext,		BLOCK_EX },
+	{ "quakex",		cmd_quakex,		BLOCK_EX },
+	{ "quakey",		cmd_quakey,		BLOCK_EX },
+	{ "reset",		cmd_reset,		BLOCK_EX },
+	{ "resettimer",		cmd_resettimer,		BLOCK_EX },
+	{ "return",		cmd_return,		BLOCK_DEF|BLOCK_EX },
+	{ "rlookback",		NULL,			BLOCK_DEF },
+	{ "rmenu",		cmd_rmenu,		BLOCK_DEF },
+	{ "rmode",		cmd_rmode,		BLOCK_EX },
+	{ "rnd",		cmd_rnd,		BLOCK_DEF|BLOCK_EX },
+	{ "rnd2",		cmd_rnd2,		BLOCK_DEF|BLOCK_EX },
+	{ "roff",		NULL,			BLOCK_DEF },
+	{ "savegame",		cmd_savegame,		BLOCK_EX },
+	{ "savename",		cmd_savename,		BLOCK_DEF },
+	{ "savenumber",		cmd_savenumber,		BLOCK_DEF },
+	{ "saveoff",		cmd_saveoff,		BLOCK_EX },
+	{ "saveon",		cmd_saveon,		BLOCK_EX },
+	{ "select",		cmd_select,		BLOCK_EX },
+	{ "selectcolor",	cmd_selectcolor,	BLOCK_DEF },
+	{ "selectvoice",	NULL,			BLOCK_DEF },
+	{ "selgosub",		cmd_selgosub,		BLOCK_EX },
+	{ "selnum",		cmd_selnum,		BLOCK_EX },
+	{ "setcursor",		cmd_setcursor,		BLOCK_EX },
+	{ "setwindow",		cmd_setwindow,		BLOCK_EX },
+	{ "skip",		cmd_skip,		BLOCK_DEF|BLOCK_EX },
+	{ "soundpressplgin",	cmd_soundpressplgin,	BLOCK_DEF },
+	{ "spi",		cmd_spi,		BLOCK_DEF },
+	{ "stop",		cmd_stop,		BLOCK_EX },
+	{ "stralias",		cmd_stralias,		BLOCK_DEF },
+	{ "sub",		cmd_sub,		BLOCK_DEF|BLOCK_EX },
+	{ "systemcall",		cmd_systemcall,		BLOCK_EX },
+	{ "tal",		NULL,			BLOCK_EX },
+	{ "textclear",		cmd_textclear,		BLOCK_EX },
+	{ "textoff",		NULL,			BLOCK_EX },
+	{ "texton",		NULL,			BLOCK_EX },
+	{ "textspeed",		cmd_textspeed,		BLOCK_EX },
+	{ "transmode",		cmd_transmode,		BLOCK_DEF },
+	{ "trap",		cmd_trap,		BLOCK_EX },
+	{ "underline",		cmd_underline,		BLOCK_DEF },
+	{ "versionstr",		cmd_versionstr,		BLOCK_DEF },
+	{ "vsp",		cmd_vsp,		BLOCK_EX },
+	{ "wait",		cmd_wait,		BLOCK_EX },
+	{ "waittimer",		cmd_waittimer,		BLOCK_EX },
+	{ "wave",		cmd_wave,		BLOCK_EX },
+	{ "waveloop",		cmd_waveloop,		BLOCK_EX },
+	{ "wavestop",		cmd_wavestop,		BLOCK_EX },
+	{ "windoweffect",	cmd_windoweffect,	BLOCK_DEF|BLOCK_EX },
 };
 
 void
@@ -339,7 +352,8 @@ command_init(void)
 	size_t s;
 
 	for (s = 0; s < NELEMS(cmd_tbl); s++)
-		symbol_add_command(cmd_tbl[s].str, cmd_tbl[s].funcp);
+		symbol_add(&CCOMMAND->symbol,
+		    cmd_tbl[s].str, cmd_tbl[s].funcp, cmd_tbl[s].block);
 }
 
 static long
@@ -508,14 +522,14 @@ cmd_bg(reg_t *p, long narg)
 	case TOKEN_VARSTR:
 		bg = cmd_get_string(&p[0]);
 		_ASSERT(bg != NULL);
-		screen_set_bg(bg, 1 /* XXX effect */);
+		screen_set_bg(bg);
 		break;
 
 	case TOKEN_COLOR:
 		if (p[0].u.val == 0) {
-			screen_set_bg("black", 1);
+			screen_set_bg("black");
 		} else if (p[0].u.val == 0xffffff) {
-			screen_set_bg("white", 1);
+			screen_set_bg("white");
 		} else {
 			_ASSERT(0);
 			return STATE_ERROR;
@@ -526,6 +540,8 @@ cmd_bg(reg_t *p, long narg)
 		_ASSERT(0);
 		return STATE_ERROR;
 	}
+
+	CEFFECT->no = 1;
 
 	return STATE_COMMAND;
 }
@@ -662,7 +678,9 @@ cmd_cl(reg_t *p, long narg)
 	s = cmd_get_string(&p[0]);
 	_ASSERT(s != NULL);
 
-	hide_chr(s[0], 1 /* XXX effect */);
+	hide_chr(s[0]);
+
+	CEFFECT->no = 1;
 
 	return STATE_COMMAND;
 }
@@ -782,6 +800,18 @@ cmd_dec(reg_t *p, long narg)
 }
 
 static int
+cmd_defaultfont(reg_t *p, long narg)
+{
+
+	UNUSED(p);
+
+	DPRINTF(("defaultfont: narg = %ld\n", narg));
+	_ASSERT(narg == 1);
+
+	return STATE_COMMAND;
+}
+
+static int
 cmd_defaultspeed(reg_t *p, long narg)
 {
 
@@ -806,15 +836,15 @@ cmd_definereset(reg_t *p, long narg)
 	save_labellog();
 
 	reset();
-	chr_set_priority(25);
-	chr_set_underline(479);
 	is_globalon = 0;
 	is_fchklog = 0;
 	is_labellog = 0;
 
-	/* stralias, numalias を解放しなければならない */
+	symbol_destroy(CALIAS->symbol);
+	chr_set_priority(25);
+	chr_set_underline(479);
 
-	core->block = BLOCK_DEFINE;
+	core->block = BLOCK_DEF;
 	label_jump("define");
 
 	return STATE_COMMAND;
@@ -986,7 +1016,7 @@ cmd_game(reg_t *p, long narg)
 	_ASSERT(p == NULL);
 	_ASSERT(narg == 0);
 
-	core->block = BLOCK_EXEC;
+	core->block = BLOCK_EX;
 	label_jump("start");
 
 	return STATE_COMMAND;
@@ -1326,7 +1356,9 @@ cmd_ld(reg_t *p, long narg)
 	_ASSERT(narg == 3 || narg == 4);
 
 	s = cmd_get_string(&p[0]);
-	load_chr(s[0], cmd_get_string(&p[1]), 1 /* XXX effect */);
+	load_chr(s[0], cmd_get_string(&p[1]));
+
+	CEFFECT->no = 1;
 
 	return STATE_COMMAND;
 }
@@ -1359,6 +1391,19 @@ cmd_lookbackcolor(reg_t *p, long narg)
 }
 
 static int
+cmd_lookbackflush(reg_t *p, long narg)
+{
+
+	DPRINTF(("cmd_lookbackflush: narg = %ld\n", narg));
+	_ASSERT(p == NULL);
+	_ASSERT(narg == 0);
+
+	/* XXX */
+
+	return STATE_COMMAND;
+}
+
+static int
 cmd_loadgame(reg_t *p, long narg)
 {
 	long v;
@@ -1368,6 +1413,19 @@ cmd_loadgame(reg_t *p, long narg)
 
 	v = cmd_get_number(&p[0]);
 	UNUSED(v);
+	/* XXX */
+
+	return STATE_COMMAND;
+}
+
+static int
+cmd_locate(reg_t *p, long narg)
+{
+
+	DPRINTF(("locate: narg = %ld\n", narg));
+	_ASSERT(narg == 2);
+
+	text_set_locate(cmd_get_number(&p[0]), cmd_get_number(&p[1]));
 
 	return STATE_COMMAND;
 }
@@ -1464,7 +1522,6 @@ cmd_menusetwindow(reg_t *p, long narg)
 	_ASSERT(narg == 7);
 
 	/* XXX */
-	redraw(1);
 
 	return STATE_COMMAND;
 }
@@ -1543,24 +1600,30 @@ cmd_monocro(reg_t *p, long narg)
 }
 
 static int
-cmd_mov(reg_t *p, long narg)
+mov_subr(reg_t *p, long narg, int num)
 {
 	unsigned char *str;
 	long v;
+	int i;
 
-	DPRINTF(("mov: narg = %ld\n", narg));
-	_ASSERT(narg == 2);
+	DPRINTF(("mov_subr: narg = %ld\n", narg));
+	_ASSERT(num > 0 && num < 11);
+	_ASSERT(narg == num + 1);
 
 	switch (p[0].type) {
 	case TOKEN_VARNUM:
-		v = cmd_get_number(&p[1]);
-		varnum_set(p[0].u.val, v);
+		for (i = 1; i < num + 1; i++) {
+			v = cmd_get_number(&p[i]);
+			varnum_set(p[0].u.val + i - 1, v);
+		}
 		break;
 
 	case TOKEN_VARSTR:
-		str = cmd_get_string(&p[1]);
-		_ASSERT(str);
-		varstr_set(p[0].u.val, str);
+		for (i = 1; i < num + 1; i++) {
+			str = cmd_get_string(&p[i]);
+			_ASSERT(str != NULL);
+			varstr_set(p[0].u.val + i - 1, str);
+		}
 		break;
 
 	default:
@@ -1569,74 +1632,96 @@ cmd_mov(reg_t *p, long narg)
 	}
 
 	return STATE_COMMAND;
+}
+
+static int
+cmd_mov(reg_t *p, long narg)
+{
+
+	DPRINTF(("mov: narg = %ld\n", narg));
+	_ASSERT(narg == 2);
+
+	return mov_subr(p, narg, 1);
 }
 
 static int
 cmd_mov3(reg_t *p, long narg)
 {
-	unsigned char *str;
-	long v;
-	int i;
 
 	DPRINTF(("mov3: narg = %ld\n", narg));
 	_ASSERT(narg == 4);
 
-	switch (p[0].type) {
-	case TOKEN_VARNUM:
-		for (i = 1; i < 4; i++) {
-			v = cmd_get_number(&p[i]);
-			varnum_set(p[0].u.val + i - 1, v);
-		}
-		break;
+	return mov_subr(p, narg, 3);
+}
 
-	case TOKEN_VARSTR:
-		for (i = 1; i < 4; i++) {
-			str = cmd_get_string(&p[i]);
-			_ASSERT(str != NULL);
-			varstr_set(p[0].u.val + i - 1, str);
-		}
-		break;
+static int
+cmd_mov4(reg_t *p, long narg)
+{
 
-	default:
-		_ASSERT(0);
-		return STATE_ERROR;
-	}
+	DPRINTF(("mov4: narg = %ld\n", narg));
+	_ASSERT(narg == 5);
 
-	return STATE_COMMAND;
+	return mov_subr(p, narg, 4);
+}
+
+static int
+cmd_mov5(reg_t *p, long narg)
+{
+
+	DPRINTF(("mov5: narg = %ld\n", narg));
+	_ASSERT(narg == 6);
+
+	return mov_subr(p, narg, 5);
+}
+
+static int
+cmd_mov6(reg_t *p, long narg)
+{
+
+	DPRINTF(("mov6: narg = %ld\n", narg));
+	_ASSERT(narg == 7);
+
+	return mov_subr(p, narg, 6);
+}
+
+static int
+cmd_mov7(reg_t *p, long narg)
+{
+
+	DPRINTF(("mov7: narg = %ld\n", narg));
+	_ASSERT(narg == 8);
+
+	return mov_subr(p, narg, 7);
+}
+
+static int
+cmd_mov8(reg_t *p, long narg)
+{
+
+	DPRINTF(("mov8: narg = %ld\n", narg));
+	_ASSERT(narg == 9);
+
+	return mov_subr(p, narg, 8);
+}
+
+static int
+cmd_mov9(reg_t *p, long narg)
+{
+
+	DPRINTF(("mov9: narg = %ld\n", narg));
+	_ASSERT(narg == 10);
+
+	return mov_subr(p, narg, 9);
 }
 
 static int
 cmd_mov10(reg_t *p, long narg)
 {
-	unsigned char *str;
-	long v;
-	int i;
 
 	DPRINTF(("mov10: narg = %ld\n", narg));
 	_ASSERT(narg == 11);
 
-	switch (p[0].type) {
-	case TOKEN_VARNUM:
-		for (i = 1; i < 11; i++) {
-			v = cmd_get_number(&p[i]);
-			varnum_set(p[0].u.val + i - 1, v);
-		}
-		break;
-
-	case TOKEN_VARSTR:
-		for (i = 1; i < 11; i++) {
-			str = cmd_get_string(&p[i]);
-			_ASSERT(str != NULL);
-			varstr_set(p[0].u.val + i - 1, str);
-		}
-		break;
-
-	default:
-		_ASSERT(0);
-		return STATE_ERROR;
-	}
-
-	return STATE_COMMAND;
+	return mov_subr(p, narg, 10);
 }
 
 static int
@@ -1849,7 +1934,8 @@ cmd_numalias(reg_t *p, long narg)
 	_ASSERT(p[0].type == TOKEN_STRING);
 	_ASSERT(p[1].type == TOKEN_NUMBER);
 
-	symbol_add_numalias(p[0].u.str, p[1].u.val);
+	symbol_add(&CALIAS->symbol,
+	    p[0].u.str, (void*)p[1].u.val, SYMBOL_NUMALIAS);
 
 	return STATE_COMMAND;
 }
@@ -1916,8 +2002,8 @@ cmd_print(reg_t *p, long narg)
 	_ASSERT(narg >= 1 && narg <= 3);
 	_ASSERT(p[0].type == TOKEN_NUMBER);
 
-	if (p[0].u.val != 0)
-		redraw(p[0].u.val);
+	screen_update();
+	CEFFECT->no = cmd_get_number(&p[0]);
 
 	return STATE_COMMAND;
 }
@@ -2240,19 +2326,6 @@ cmd_setcursor(reg_t *p, long narg)
 }
 
 static int
-cmd_setspeed(reg_t *p, long narg)
-{
-
-	DPRINTF(("setspeed: narg = %ld\n", narg));
-	_ASSERT(p == NULL);
-	_ASSERT(narg == 0);
-
-	/* XXX */
-
-	return STATE_COMMAND;
-}
-
-static int
 cmd_setwindow(reg_t *p, long narg)
 {
 	long v[16];
@@ -2354,6 +2427,8 @@ cmd_stralias(reg_t *p, long narg)
 	_ASSERT(p[0].type == TOKEN_STRING);
 	_ASSERT(p[1].type == TOKEN_STRING);
 
+	symbol_add(&CALIAS->symbol, p[0].u.str, p[1].u.str, SYMBOL_STRALIAS);
+
 	return STATE_COMMAND;
 }
 
@@ -2393,7 +2468,6 @@ cmd_textclear(reg_t *p, long narg)
 	_ASSERT(narg == 0);
 
 	newpage();
-	redraw(1);
 
 	return STATE_COMMAND;
 }

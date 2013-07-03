@@ -1,4 +1,4 @@
-/*	$Id: nscr.h,v 1.22 2002/01/15 17:43:07 nonaka Exp $	*/
+/*	$Id: nscr.h,v 1.24 2002/01/18 19:36:51 nonaka Exp $	*/
 
 /*
  * Copyright (c) 2001, 2002 NONAKA Kimihiro <aw9k-nnk@asahi-net.or.jp>
@@ -86,7 +86,23 @@ typedef struct _nscr_core_tag {
 
 	object_t		*arc;
 
+	off_t			epc;
+	int			state;
 	int			block;
+
+	struct {
+		int		width;
+		int		height;
+
+		int		nega;
+		long		grayscale;
+
+		rect_t		window_pos;
+
+		object_t	*offscreen;
+		object_t	*bg;
+		object_t	*text_window;
+	} screen;
 
 	struct {
 		long		width;
@@ -137,34 +153,51 @@ typedef struct _nscr_core_tag {
 	struct {
 		int		color[2];
 	} selection;
+
+	struct {
+		int		no;
+	} effect;
+
+	struct {
+		object_t	*symbol;
+	} command;
+
+	struct {
+		object_t	*symbol;
+	} alias;
 } nscr_core_t;
 
-#define	CFONT		(&core->font)
-#define	CTEXT		(&core->text)
+#define	CALIAS		(&core->alias)
 #define	CCLICKSTR	(&core->clickstr)
+#define	CCOMMAND	(&core->command)
+#define	CEFFECT		(&core->effect)
+#define	CFONT		(&core->font)
 #define	CMSG		(&core->msg)
+#define	CSCREEN		(&core->screen)
 #define	CSELECTION	(&core->selection)
+#define	CTEXT		(&core->text)
 
-#define	BLOCK_DEFINE		1
-#define	BLOCK_EXEC		2
+#define	BLOCK_DEF		(1 << 0)
+#define	BLOCK_EX		(1 << 1)
+#define	SELECT_COMMAND		(1 << 2)
 
 #define	STATE_ERROR		0
-#define	STATE_COMMAND		1
-#define	STATE_ARG		2
-#define	STATE_ARG_NEXT		3
-#define	STATE_CHECK_IMAGE	4
-#define	STATE_CHECK_PAREN	5
-#define	STATE_CHECK_TOKEN0	6
-#define	STATE_CHECK_TOKEN1	7
-#define	STATE_EVAL		8
+#define	STATE_END		1
+#define	STATE_COMMAND		2
+#define	STATE_ARG		3
+#define	STATE_ARG_NEXT		4
+#define	STATE_CHECK_IMAGE	5
+#define	STATE_CHECK_PAREN	6
+#define	STATE_CHECK_TOKEN0	7
+#define	STATE_CHECK_TOKEN1	8
 #define	STATE_EXEC		9
-#define	STATE_END		10
-#define	STATE_BUTTONWAIT	11
-#define	STATE_SELECTWAIT	12
-#define	STATE_CLICKWAIT		13
-#define	STATE_CLICKPAGEWAIT	14
-#define	STATE_EFFECTWAIT	15
-#define	STATE_NEXTCOMMAND	16
+#define	STATE_NEXTCOMMAND	10
+#define	STATE_EFFECT		11
+#define	STATE_BUTTONWAIT	12
+#define	STATE_SELECTWAIT	13
+#define	STATE_CLICKWAIT		14
+#define	STATE_CLICKPAGEWAIT	15
+#define	STATE_EFFECTWAIT	16
 #define	STATE_WAITTIMER		17
 #define	STATE_NUM		18
 
@@ -205,6 +238,7 @@ void command_init(void);
 /* display.c */
 void text_setwindow(long *, long, unsigned char *);
 void text_set_clickstr(unsigned char *, size_t, long);
+void text_set_locate(long, long);
 void text_setrect(rect_t *, int *, unsigned char *, size_t);
 void display_selection(long, long, unsigned char *, int);
 void display_message(unsigned char *, size_t);
@@ -213,7 +247,7 @@ void newpage(void);
 void text_redraw(void);
 
 /* effect.c */
-extern int effect;
+int do_effect(void);
 
 /* jpeg.c */
 image_t *get_jpeg(FILE *, long, size_t);
@@ -265,8 +299,8 @@ int sar_open(object_t *, int);
 
 /* screen.c */
 void screen_init(void);
-void screen_set_bg(char *, int);
-void redraw(int);
+void screen_set_bg(unsigned char *);
+void redraw(rect_t *);
 void screen_setwindow(unsigned char *, int, rect_t *);
 void screen_grayscale(int);
 void screen_nega(long);
@@ -297,9 +331,9 @@ image_t *get_spb(FILE *, long, size_t, size_t);
 /* sprite.c */
 #define	MAX_SPRITE	50
 
-void load_chr(unsigned char, unsigned char *, int);
+void load_chr(unsigned char, unsigned char *);
 void merge_chr(unsigned char, image_t *);
-void hide_chr(unsigned char, int);
+void hide_chr(unsigned char);
 void chr_set_priority(long);
 void chr_set_underline(long);
 void load_sprite(int, unsigned char *, point_t *, int);
@@ -338,8 +372,8 @@ int save_globalvar(void);
 int load_globalvar(void);
 
 /* x11.c */
-#define	SCREEN_WIDTH	640
-#define	SCREEN_HEIGHT	480
+#define	SCREEN_WIDTH	CSCREEN->width
+#define	SCREEN_HEIGHT	CSCREEN->height
 #define	BPP		3
 
 int engine_exec(void);

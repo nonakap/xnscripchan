@@ -1,4 +1,4 @@
-/*	$Id: main.c,v 1.12 2002/01/09 18:14:34 nonaka Exp $	*/
+/*	$Id: main.c,v 1.13 2002/01/18 18:23:39 nonaka Exp $	*/
 
 /*
  * Copyright (c) 2001, 2002 NONAKA Kimihiro <aw9k-nnk@asahi-net.or.jp>
@@ -61,6 +61,7 @@ main(int argc, char *argv[])
 			is_encoded = 0;
 			goto script_read;
 		}
+		fprintf(stderr, "Can't open '%s'\n", argv[1]);
 	}
 
 	fp = fopen("0.txt", "rb");
@@ -83,6 +84,9 @@ script_read:
 	yyin = fp;
 	prescan(yyin);
 
+	CSCREEN->width = 640;	/* XXX */
+	CSCREEN->height = 480;	/* XXX */
+
 	arc = archive_new(0, NULL);
 	core->arc = arc;
 
@@ -96,7 +100,7 @@ script_read:
 	}
 
 	reset();
-	core->block = BLOCK_DEFINE;
+	core->block = BLOCK_DEF;
 	label_jump("define");
 	engine_exec();
 

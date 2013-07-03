@@ -1,5 +1,5 @@
 %{
-/*	$Id: parse.y,v 1.6 2002/01/07 17:26:02 nonaka Exp $	*/
+/*	$Id: parse.y,v 1.7 2002/01/18 18:23:39 nonaka Exp $	*/
 
 /*
  * Copyright (c) 2001 NONAKA Kimihiro <aw9k-nnk@asahi-net.or.jp>
@@ -44,7 +44,6 @@ void yyerror(char *);
 }
 
 %token TOKEN_UNKNOWN
-%token TOKEN_SELECT_COMMAND
 %token TOKEN_STATE
 %token TOKEN_NL TOKEN_AND TOKEN_GE TOKEN_LE TOKEN_EQ TOKEN_NE
 %token TOKEN_FCHK TOKEN_LCHK

@@ -2,9 +2,9 @@ NScripter for X -- XNscripchan
 
 0. はじめに
 
-	高橋直樹さん作の NScripter を UNIX + X11 上で動作させようと思った、
-	という訳ではなくて、NScripter をダシにして lex + yacc の勉強をしよ
-	うと思ったのがはじまりでした。
+	高橋直樹さん作の NScripter を X11 上で動作させようと思った、という訳
+	ではなくて、NScripter をダシにして lex + yacc の勉強をしようと思った
+	のがはじまりでした。
 
 
 1. 動作環境
@@ -36,13 +36,14 @@ NScripter for X -- XNscripchan
 	○実装機能
 
 	・SAR, NSA 形式アーカイブの読み出し
+	・BMP, JPEG, PNG, SPB, 変形 LZSS, NBZ 形式ファイルの読み出し
 	・グローバル変数、ファイルアクセスログ、ラベルアクセスログの保存
 
 
 	○制限事項
 
 	・0.txt スクリプトのロード時、0.txt 以外のファイルを読まない
-	・コマンドは定義ブロック、実行ブロックを意識していない
+	・忘れる位沢山
 
 
 	○未実装機能
@@ -53,6 +54,7 @@ NScripter for X -- XNscripchan
 	・ウィンドウメニュー
 	・ゲームのセーブ、ロード
 	・画像のアニメーション
+	・その他沢山
 
 
 5. 備考
@@ -72,4 +74,4 @@ NScripter for X -- XNscripchan
 
 
 -- 
-			$Id: README,v 1.3 2002/01/15 17:43:07 nonaka Exp $
+			$Id: README,v 1.4 2002/01/18 18:27:19 nonaka Exp $

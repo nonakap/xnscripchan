@@ -1,4 +1,4 @@
-/*	$Id: x11.c,v 1.12 2002/01/09 18:14:34 nonaka Exp $	*/
+/*	$Id: x11.c,v 1.13 2002/01/18 18:23:39 nonaka Exp $	*/
 
 #ifndef	FONTSET
 #define	FONTSET	"-ricoh-gothic-%s-r-normal--%ld-*-*-*-*-*-*-*"
@@ -208,8 +208,13 @@ process_events(void)
 		break;
 
 	case Expose:
-		if (ev.xexpose.count == 0)
-			redraw(1);
+		if (ev.xexpose.count == 0) {
+			rect_t rect;
+			rect.left = rect.top = 0;
+			rect.width = SCREEN_WIDTH;
+			rect.height = SCREEN_HEIGHT;
+			redraw(&rect);
+		}
 		break;
 
 	case ButtonPress:

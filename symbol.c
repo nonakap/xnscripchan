@@ -1,4 +1,4 @@
-/*	$Id: symbol.c,v 1.8 2002/01/08 18:13:27 nonaka Exp $	*/
+/*	$Id: symbol.c,v 1.9 2002/01/18 18:23:39 nonaka Exp $	*/
 
 /*
  * Copyright (c) 2001, 2002 NONAKA Kimihiro <aw9k-nnk@asahi-net.or.jp>
@@ -32,33 +32,32 @@
 #include "symbol.h"
 
 static void symbol_print(symbol_t *sym);
-static int symbol_add(char *sym, int type, void *arg);
-
-static symbol_t *symbol_list = NULL;
 
 symbol_t *
-symbol_lookup(char *sym)
+symbol_lookup(object_t *obj, char *sym)
 {
 	symbol_t *p;
 
-	for (p = symbol_list; p != NULL; p = p->next)
+	for (p = (symbol_t *)obj; p != NULL; p = p->next)
 		if (strcasecmp(sym, p->sym) == 0)
 			break;
 	return p;
 }
 
 void
-symbol_show(void)
+symbol_show(object_t *obj)
 {
 	symbol_t *p;
 
-	for (p = symbol_list; p != NULL; p = p->next)
+	for (p = (symbol_t *)obj; p != NULL; p = p->next)
 		symbol_print(p);
 }
 
 static void
 symbol_print(symbol_t *p)
 {
+
+	_ASSERT(p != NULL);
 
 	printf("type = %d\n", p->type);
 	printf("sym = %s\n", p->sym);
@@ -70,62 +69,34 @@ symbol_print(symbol_t *p)
 		printf("unknown = 0x%08lx\n", p->u.val);
 }
 
-int
-symbol_add_numalias(char *sym, long num)
+void
+symbol_destroy(object_t *obj)
 {
+	symbol_t *p, *next;
 
-	symbol_add(sym, SYMBOL_NUMALIAS, (void *)num);
+	_ASSERT(obj != NULL);
 
-	return 0;
+	for (p = (symbol_t *)obj; p != NULL; p = next) {
+		next = p->next;
+		Efree(p);
+	}
 }
 
 int
-symbol_add_stralias(char *sym, void *str)
-{
-
-	symbol_add(sym, SYMBOL_STRALIAS, str);
-
-	return 0;
-}
-
-int
-symbol_add_command(char *sym, void *str)
-{
-
-	symbol_add(sym, SYMBOL_COMMAND, str);
-
-	return 0;
-}
-
-static int
-symbol_add(char *sym, int type, void *arg)
+symbol_add(object_t **obj, char *sym, void *arg, int type)
 {
 	symbol_t *p, **q;
+
+	_ASSERT(obj != NULL);
+	_ASSERT(sym != NULL);
 
 	p = (symbol_t *)Emalloc(sizeof(symbol_t));
 	p->next = NULL;
 	p->type = type;
 	p->sym = Estrdup(sym);
+	p->u.ptr = arg;
 
-	switch (type) {
-	case SYMBOL_NUMALIAS:
-		p->u.val = (long)arg;
-		break;
-
-	case SYMBOL_STRALIAS:
-		p->u.str = (char *)arg;
-		break;
-
-	case SYMBOL_COMMAND:
-		p->u.func = (int (*)(reg_t *, long))arg;
-		break;
-
-	default:
-		_ASSERT(0);
-		return 1;
-	}
-
-	for (q = &symbol_list; *q != NULL; q = &((*q)->next))
+	for (q = (symbol_t **)obj; *q != NULL; q = &((*q)->next))
 		continue;
 	*q = p;
 

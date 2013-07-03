@@ -1,4 +1,4 @@
-/*	$Id: archive.c,v 1.5 2002/01/10 17:25:32 nonaka Exp $	*/
+/*	$Id: archive.c,v 1.6 2002/01/18 18:23:39 nonaka Exp $	*/
 
 /*
  * Copyright (c) 2001, 2002 NONAKA Kimihiro <aw9k-nnk@asahi-net.or.jp>
@@ -204,7 +204,8 @@ archive_is_access(object_t *obj, unsigned char *name)
 	_ASSERT(name != NULL);
 
 	len = strlen(name);
-	_ASSERT(len != 0);
+	if (len == 0)
+		return 0;
 
 	arc = (archive_t *)obj;
 

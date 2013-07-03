@@ -1,5 +1,5 @@
 %{
-/*	$Id: lex.l,v 1.11 2002/01/11 17:02:47 nonaka Exp $	*/
+/*	$Id: lex.l,v 1.13 2002/01/18 18:52:37 nonaka Exp $	*/
 
 /*
  * Copyright (c) 2001 NONAKA Kimihiro <aw9k-nnk@asahi-net.or.jp>
@@ -83,6 +83,7 @@ _alnum	[_0-9A-Za-z]
 [ \t]	;
 ;.*	/* comment */;
 ^~	/* label */;
+\r	/* ignore */;
 ^\n$	lineno++;
 \/\n	lineno++;
 
@@ -197,6 +198,7 @@ lchk	return TOKEN_LCHK;
 	return TOKEN_NL;
 }
 
+
 .	return yylex_subr();
 %%
 static int
@@ -214,14 +216,14 @@ var_subr(int kind, unsigned char **s, long *val)
 				break;
 
 			case TOKEN_STRING:
-				p = symbol_lookup(*s);
+				p = symbol_lookup(CALIAS->symbol, *s);
 				_ASSERT(p != NULL);
 				*val = p->u.val;
 				break;
 
 			case TOKEN_VARSTR:
 				*s = varstr_get(*val);
-				p = symbol_lookup(*s);
+				p = symbol_lookup(CALIAS->symbol, *s);
 				_ASSERT(p != NULL);
 				*val = p->u.val;
 				break;
@@ -243,14 +245,14 @@ var_subr(int kind, unsigned char **s, long *val)
 				break;
 
 			case TOKEN_STRING:
-				p = symbol_lookup(*s);
+				p = symbol_lookup(CALIAS->symbol, *s);
 				_ASSERT(p != NULL);
 				*val = p->u.val;
 				break;
 
 			case TOKEN_VARSTR:
 				*s = varstr_get(*val);
-				p = symbol_lookup(*s);
+				p = symbol_lookup(CALIAS->symbol, *s);
 				_ASSERT(p != NULL);
 				*val = p->u.val;
 				break;
@@ -299,6 +301,7 @@ yylex_subr(void)
 					p[off++] = c;
 					iskanji2nd = 1;
 				} else {
+					_ASSERT(0);
 					yyerror("broken SJIS code\n");
 					break;
 				}
@@ -308,6 +311,7 @@ yylex_subr(void)
 					p[off++] = c;
 					iskanji2nd = 0;
 				} else {
+					_ASSERT(0);
 					yyerror("broken SJIS code\n");
 					break;
 				}

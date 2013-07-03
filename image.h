@@ -1,4 +1,4 @@
-/*	$Id: image.h,v 1.12 2002/01/15 17:43:07 nonaka Exp $	*/
+/*	$Id: image.h,v 1.13 2002/01/18 18:23:39 nonaka Exp $	*/
 
 /*
  * Copyright (c) 2001, 2002 NONAKA Kimihiro <aw9k-nnk@asahi-net.or.jp>
@@ -68,6 +68,8 @@ typedef struct imageinfo_tag {
 
 typedef struct image_tag {
 	object_t	obj;
+
+	unsigned char	*name;
 
 	int		width;
 	int		height;

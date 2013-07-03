@@ -1,4 +1,4 @@
-/*	$Id: label.c,v 1.9 2002/01/08 18:13:27 nonaka Exp $	*/
+/*	$Id: label.c,v 1.10 2002/01/18 18:52:37 nonaka Exp $	*/
 
 /*
  * Copyright (c) 2001, 2002 NONAKA Kimihiro <aw9k-nnk@asahi-net.or.jp>
@@ -78,6 +78,17 @@ void
 label_add(unsigned char *s, int line, long offset)
 {
 	nscrlabel_t **p, *t;
+	size_t size;
+
+	_ASSERT(s != NULL);
+
+	size = strlen(s);
+	if (size == 0)
+		return;
+
+	/* nuke '\r' */
+	if (s[size - 1] == '\r')
+		s[size - 1] = '\0';
 
 	t = (nscrlabel_t *)Emalloc(sizeof(nscrlabel_t));
 	t->name = Estrdup(s);

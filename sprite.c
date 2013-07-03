@@ -1,4 +1,4 @@
-/*	$Id: sprite.c,v 1.8 2002/01/14 17:43:42 nonaka Exp $	*/
+/*	$Id: sprite.c,v 1.10 2002/01/18 18:52:37 nonaka Exp $	*/
 
 /*
  * Copyright (c) 2001, 2002 NONAKA Kimihiro <aw9k-nnk@asahi-net.or.jp>
@@ -45,24 +45,25 @@ static long chr_priority = 25;
 static long chr_underline = 479;
 
 void
-load_chr(unsigned char kind, unsigned char *filename, int effect)
+load_chr(unsigned char kind, unsigned char *filename)
 {
 	int n;
-
-	UNUSED(effect);
 
 	_ASSERT(filename != NULL);
 
 	switch (kind) {
 	case 'c':
+	case 'C':
 		n = 0;
 		break;
 
 	case 'l':
+	case 'L':
 		n = 1;
 		break;
 
 	case 'r':
+	case 'R':
 		n = 2;
 		break;
 
@@ -79,30 +80,31 @@ load_chr(unsigned char kind, unsigned char *filename, int effect)
 	chr[n].flag = 1;
 
 	screen_update();
-	redraw(effect);
 }
 
 void
-hide_chr(unsigned char kind, int effect)
+hide_chr(unsigned char kind)
 {
 	int i;
 
-	UNUSED(effect);
-
 	switch (kind) {
 	case 'c':
+	case 'C':
 		chr[0].flag = 0;
 		break;
 
 	case 'l':
+	case 'L':
 		chr[1].flag = 0;
 		break;
 
 	case 'r':
+	case 'R':
 		chr[2].flag = 0;
 		break;
 
 	case 'a':
+	case 'A':
 		for (i = 0; i < MAX_CHR; i++)
 			chr[i].flag = 0;
 		break;
@@ -114,7 +116,6 @@ hide_chr(unsigned char kind, int effect)
 
 	DPRINTF(("hide character '%c'\n", kind));
 	screen_update();
-	redraw(effect);
 }
 
 void
@@ -289,6 +290,7 @@ merge_sprite(image_t *dest)
 		}
 
 		if (i == chr_priority) {
+			DPRINTF(("merge character %d\n", i));
 			merge_chr('c', dest);
 			merge_chr('l', dest);
 			merge_chr('r', dest);

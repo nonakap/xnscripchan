@@ -1,4 +1,4 @@
-/*	$Id: select.c,v 1.10 2002/01/09 18:14:34 nonaka Exp $	*/
+/*	$Id: select.c,v 1.11 2002/01/18 18:23:39 nonaka Exp $	*/
 
 /*
  * Copyright (c) 2001, 2002 NONAKA Kimihiro <aw9k-nnk@asahi-net.or.jp>
@@ -111,9 +111,6 @@ select_do(int btnno, point_t *point)
 
 	switch (btnno) {
 	case 0:
-		if (prev == -1)
-			return;
-
 		for (p = select_top, i = 0; i < nselect; i++) {
 			if (in_rect(&p[i].rect, point))
 				break;
@@ -122,6 +119,9 @@ select_do(int btnno, point_t *point)
 
 	default:
 		fprintf(stderr, "select_do: btnno = %d\n", btnno);
+		return;
+	}
+	if (i == nselect) {
 		return;
 	}
 
