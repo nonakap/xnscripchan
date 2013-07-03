@@ -1,4 +1,4 @@
-/*	$Id: command.c,v 1.28 2002/01/24 16:24:50 nonaka Exp $	*/
+/*	$Id: command.c,v 1.29 2002/12/05 17:53:43 nonaka Exp $	*/
 
 /*
  * Copyright (c) 2001, 2002 NONAKA Kimihiro <aw9k-nnk@asahi-net.or.jp>
@@ -152,6 +152,7 @@ static int cmd_playonce(reg_t *, long);
 static int cmd_playstop(reg_t *, long);
 static int cmd_print(reg_t *, long);
 static int cmd_puttext(reg_t *, long);
+static int cmd_quake(reg_t *, long);
 static int cmd_quakex(reg_t *, long);
 static int cmd_quakey(reg_t *, long);
 static int cmd_reset(reg_t *, long);
@@ -323,6 +324,7 @@ static struct command_table_tag {
 	{ "playstop",		cmd_playstop,		BLOCK_EX },
 	{ "print",		cmd_print,		BLOCK_EX },
 	{ "puttext",		cmd_puttext,		BLOCK_EX },
+	{ "quake",		cmd_quake,		BLOCK_EX },
 	{ "quakex",		cmd_quakex,		BLOCK_EX },
 	{ "quakey",		cmd_quakey,		BLOCK_EX },
 	{ "reset",		cmd_reset,		BLOCK_EX },
@@ -2181,6 +2183,21 @@ cmd_puttext(reg_t *p, long narg)
 
 	s = cmd_get_string(&p[0]);
 	display_message(s, strlen(s));
+
+	return STATE_COMMAND;
+}
+
+static int
+cmd_quake(reg_t *p, long narg)
+{
+
+	UNUSED(p);
+
+	DPRINTF(("quake: narg = %ld\n", narg));
+	_ASSERT(narg == 2);
+
+	/* XXX */
+	newpage();
 
 	return STATE_COMMAND;
 }

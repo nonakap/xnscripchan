@@ -1,4 +1,4 @@
-/*	$Id: png.c,v 1.4 2002/01/23 16:38:58 nonaka Exp $	*/
+/*	$Id: png.c,v 1.5 2002/12/05 17:53:43 nonaka Exp $	*/
 
 /*
  * Copyright (c) 2001 NONAKA Kimihiro <aw9k-nnk@asahi-net.or.jp>
@@ -47,7 +47,7 @@ get_png(FILE *fp, long offset, size_t encode_size)
 	fseek(fp, offset, SEEK_SET);
 	size = fread(sig, 1, 8, fp);
 	_ASSERT(size == 8);
-	_ASSERT(memcmp(sig, "\x89PNG\x0d\x0a\x1a\0a", 8) == 0);
+	_ASSERT(memcmp(sig, "\x89PNG\x0d\x0a\x1a\x0a", 8) == 0);
 
 	data = (unsigned char *)Emalloc(encode_size);
 	fseek(fp, offset, SEEK_SET);

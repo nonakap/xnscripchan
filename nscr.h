@@ -1,4 +1,4 @@
-/*	$Id: nscr.h,v 1.26 2002/01/24 16:24:51 nonaka Exp $	*/
+/*	$Id: nscr.h,v 1.27 2002/12/05 17:53:43 nonaka Exp $	*/
 
 /*
  * Copyright (c) 2001, 2002 NONAKA Kimihiro <aw9k-nnk@asahi-net.or.jp>
@@ -255,6 +255,9 @@ void text_redraw(void);
 
 /* effect.c */
 int do_effect(void);
+
+/* gif.c */
+image_t *get_gif(FILE *, long, size_t);
 
 /* jpeg.c */
 image_t *get_jpeg(FILE *, long, size_t);

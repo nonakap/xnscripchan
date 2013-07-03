@@ -1,7 +1,7 @@
-/*	$Id: x11.c,v 1.13 2002/01/18 18:23:39 nonaka Exp $	*/
+/*	$Id: x11.c,v 1.14 2002/12/05 17:53:43 nonaka Exp $	*/
 
 #ifndef	FONTSET
-#define	FONTSET	"-ricoh-gothic-%s-r-normal--%ld-*-*-*-*-*-*-*"
+#define	FONTSET	"-kochi-gothic-%s-r-normal--%ld-*-*-*-*-*-*-*"
 #endif
 
 /*
@@ -46,7 +46,7 @@ GC gc;
 Visual *visual;
 int depth;
 Colormap cmap;
-int black, white;
+unsigned long black, white;
 
 static unsigned int rmask, gmask, bmask;
 static int rshift = 0, gshift = 0, bshift = 0;
@@ -325,7 +325,7 @@ sys_draw_char(int x, int y, unsigned short c, long color)
 		XmbDrawString(display,window,fontset,gc, x    , y + 15, tmp, 2);
 	}
 
-	XSetForeground(display, gc, color);
+	XSetForeground(display, gc, (unsigned long)color);
 	XmbDrawString(display, window, fontset, gc, x    , y + 14, tmp, 2);
 }
 

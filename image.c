@@ -1,4 +1,4 @@
-/*	$Id: image.c,v 1.21 2002/01/23 16:38:58 nonaka Exp $	*/
+/*	$Id: image.c,v 1.22 2002/12/05 17:53:43 nonaka Exp $	*/
 /* $libvimage-Id: vimage.c,v 1.14 1999/01/22 21:21:39 ryo Exp $ */
 
 #ifndef	IMAGE_CACHE
@@ -95,6 +95,7 @@ image_open(unsigned char *filename, int transmode)
 	imageinfo_t info;
 	size_t sz, data_size;
 	image_t *img;
+	unsigned char *path = NULL;
 	unsigned char *data, *p, *q;
 	FILE *fp;
 	long off;
@@ -116,9 +117,18 @@ image_open(unsigned char *filename, int transmode)
 
 	bzero(&aq, sizeof(aq));
 	if (!archive_query(core->arc, info.filename, &aq)) {
-		opened = 1;
-		/* パス名変換しないと駄目 */
-		fp = fopen(info.filename, "rb");
+		int len;
+
+		/* とりあえず、パス名変換 */
+		path = Estrdup(info.filename);
+		len = strlen(path);
+		for (i = 0; i < len; ++i) {
+			/* XXX: S-JIS の二文字目を考慮 */
+			if (path[i] == '\\')
+				path[i] = '/';
+		}
+
+		fp = fopen(path, "rb");
 		if (fp == NULL) {
 			archive_print(core->arc);
 			_ASSERT(fp != NULL);
@@ -126,10 +136,11 @@ image_open(unsigned char *filename, int transmode)
 		off = 0;
 		fseek(fp, 0L, SEEK_END);
 		aq.size = ftell(fp);
+		opened = 1;
 	} else {
-		opened = 0;
 		fp = aq.fp;
 		off = aq.offset;
+		opened = 0;
 	}
 
 	fseek(fp, off, SEEK_SET);
@@ -141,8 +152,12 @@ image_open(unsigned char *filename, int transmode)
 		img = get_jpeg(fp, off, aq.size);
 	} else if (tmp[0] == 'B' && tmp[1] == 'M') {
 		img = get_bmp(fp, off, aq.size);
-	} else if (memcmp(&tmp[0], "\x89PNG\x0d\x0a\x1a\0a", 8) == 0) {
+	} else if (memcmp(&tmp[0], "\x89PNG\x0d\x0a\x1a\x0a", 8) == 0) {
 		img = get_png(fp, off, aq.size);
+#if defined(USE_LIBUNGIF)
+	} else if (memcmp(&tmp[0], "GIF", 3) == 0) {
+		img = get_gif(fp, off, aq.size);
+#endif /* USE_LIBUNGIF */
 	} else if (aq.is_compress == 1) {
 		img = get_spb(fp, off, aq.size, aq.decode_size);
 	} else if (aq.is_compress == 2) {
@@ -250,6 +265,7 @@ image_open(unsigned char *filename, int transmode)
 	}
 
 	if (opened) {
+		Efree(path);
 		fclose(fp);
 	}
 
